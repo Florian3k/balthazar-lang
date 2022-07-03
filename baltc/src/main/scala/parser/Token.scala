@@ -19,6 +19,8 @@ enum TokenType:
   case Identifier
   case IntLiteral
   case FloatLiteral
+  case StringLiteral
+  case CharLiteral
 
   // symbols
   case LeftParen
@@ -28,8 +30,6 @@ enum TokenType:
   case LeftBrace
   case RightBrace
   case Semicolon
-  case SingleQuote
-  case DoubleQuote
 
   // operators
   case Plus

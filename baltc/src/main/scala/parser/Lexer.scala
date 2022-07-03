@@ -24,8 +24,6 @@ val regexes: List[(Regex, TokenType)] = List(
   ("^\\{".r, LeftBrace),
   ("^\\}".r, RightBrace),
   ("^;".r, Semicolon),
-  ("^'".r, SingleQuote),
-  ("^\"".r, DoubleQuote),
   ("^\\+".r, Plus),
   ("^-".r, Minus),
   ("^\\*".r, Times),
@@ -63,19 +61,19 @@ def lexer(initialContent: String, filename: String): List[Token] =
       while content.nonEmpty && content.head != '\n' do
         charIdx += 1
         content = content.tail
+    else if char == '"' then ??? // TODO parse string literal
+    else if char == '\'' then ??? // TODO parse char literal
     else
       regexes.find((re, tt) => re.findFirstIn(content).isDefined) match
-        case Some((re, SingleQuote)) => ???
-        case Some((re, DoubleQuote)) => ???
         case Some((re, tt @ (Identifier | IntLiteral | FloatLiteral))) =>
-          val res = re.findFirstIn(content)
-          ???
+          val res = re.findFirstMatchIn(content).get
+          ??? // TODO parse Identifier, IntLiteral, FloatLiteral
         case Some((re, tt)) =>
           val str = re.findFirstIn(content).get
           print(str)
           res.append(Token(tt, str, loc))
           charIdx += str.length
           content = content.drop(str.length)
-        case None => ???
+        case None => ??? // TODO handle lexer error
 
   return res.toList
