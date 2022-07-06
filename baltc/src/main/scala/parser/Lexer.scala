@@ -15,8 +15,8 @@ val regexes: List[(Regex, TokenType)] = List(
   ("^true\\b".r, TrueKeyword),
   ("^false\\b".r, FalseKeyword),
   ("^([A-Za-z][A-Za-z0-9_]+)\\b".r, Identifier),
-  ("^(\\+|-)?(0x|0b|0o)?([0-9]+)\\b".r, IntLiteral),
-  ("^(\\+|-)?([0-9]+\\.[0-9]+)\\b".r, FloatLiteral),
+  ("^(\\+|-)?([0-9]+\\.[0-9]+)\\b".r, FloatLiteral),  // floats first, to prevent int eating the integer part of float
+  ("^(\\+|-)?(0x|0b|0o)?([0-9a-fA-F]+)\\b".r, IntLiteral),
   ("^\\(".r, LeftParen),
   ("^\\)".r, RightParen),
   ("^\\[".r, LeftBracket),
@@ -64,16 +64,22 @@ def lexer(initialContent: String, filename: String): List[Token] =
       while content.nonEmpty && content.head != '\n' do
         charIdx += 1
         content = content.tail
-    else if char == '"' then ??? // TODO parse string literal
+    else if char == '"' then 
+      val strRe = "^(\".*?\")".r
+      println(content)
+      strRe.findFirstMatchIn(content) match
+        case Some(m) => 
+          val str = m.group(0)
+          res.append(Token(StringLiteral, str, loc))
+          charIdx += str.length
+          content = content.drop(str.length)
+        case _ => ??? //  TODO lexer error
     else if char == '\'' then ??? // TODO parse char literal
     else
       regexes.find((re, tt) => re.findFirstIn(content).isDefined) match
-        case Some((re, tt @ (Identifier | IntLiteral | FloatLiteral))) =>
-          val res = re.findFirstMatchIn(content).get
-          ??? // TODO parse Identifier, IntLiteral, FloatLiteral
         case Some((re, tt)) =>
           val str = re.findFirstIn(content).get
-          print(str)
+          println(str)
           res.append(Token(tt, str, loc))
           charIdx += str.length
           content = content.drop(str.length)
