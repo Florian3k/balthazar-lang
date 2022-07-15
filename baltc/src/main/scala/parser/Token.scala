@@ -36,6 +36,7 @@ enum TokenType:
   case Minus
   case Times
   case Div
+  case Modulo
   case Or
   case And
   case LessEqual
@@ -46,3 +47,5 @@ enum TokenType:
   case Assign
   case NotEqual
   case Not
+  case ShiftLeft
+  case ShiftRight
