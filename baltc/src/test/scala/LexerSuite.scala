@@ -15,14 +15,14 @@ class LexerSuite extends munit.FunSuite:
     val res = lexer(">> <<", "file1")
     val expected = List(
       Token(ShiftRight, ">>", Location("file1", 1, 1)),
-      Token(ShiftLeft,  "<<", Location("file1", 1, 4))
+      Token(ShiftLeft, "<<", Location("file1", 1, 4)),
     )
     assertEquals(res, expected)
   }
 
   test("differentiate between comparissons and shifts") {
     val res = lexer("> > >> << < << <", "file1")
-    val expected = List (
+    val expected = List(
       Token(GreaterThan, ">", Location("file1", 1, 1)),
       Token(GreaterThan, ">", Location("file1", 1, 3)),
       Token(ShiftRight, ">>", Location("file1", 1, 5)),
@@ -36,13 +36,13 @@ class LexerSuite extends munit.FunSuite:
 
   test("lex modulo operator") {
     val res = lexer("%", "file1")
-    val expected = List (
+    val expected = List(
       Token(Modulo, "%", Location("file1", 1, 1))
     )
     assertEquals(res, expected)
   }
 
-  test("differentiate between keywords and identifiers"){
+  test("differentiate between keywords and identifiers") {
     val res = lexer("def foo bar if else while for true baz", "file1")
     val expected = List(
       Token(DefKeyword, "def", Location("file1", 1, 1)),
@@ -82,7 +82,7 @@ class LexerSuite extends munit.FunSuite:
     val res = lexer("10 \"foo\" bar", "file1")
     val expected = List(
       Token(IntLiteral, "10", Location("file1", 1, 1)),
-      Token(StringLiteral, "\"foo\"", Location("file1",1, 4)),
+      Token(StringLiteral, "\"foo\"", Location("file1", 1, 4)),
       Token(Identifier, "bar", Location("file1", 1, 10)),
     )
     assertEquals(res, expected)
