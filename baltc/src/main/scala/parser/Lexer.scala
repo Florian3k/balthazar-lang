@@ -66,7 +66,6 @@ def lexer(initialContent: String, filename: String): List[Token] =
         content = content.tail
     else if char == '"' then 
       val strRe = "^(\".*?\")".r
-      println(content)
       strRe.findFirstMatchIn(content) match
         case Some(m) => 
           val str = m.group(0)
@@ -79,7 +78,6 @@ def lexer(initialContent: String, filename: String): List[Token] =
       regexes.find((re, tt) => re.findFirstIn(content).isDefined) match
         case Some((re, tt)) =>
           val str = re.findFirstIn(content).get
-          println(str)
           res.append(Token(tt, str, loc))
           charIdx += str.length
           content = content.drop(str.length)
