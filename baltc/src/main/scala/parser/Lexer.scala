@@ -7,14 +7,22 @@ import TokenType._
 
 val regexes: List[(Regex, TokenType)] = List(
   ("^def\\b".r, DefKeyword),
+  ("^return\\b".r, ReturnKeyword),
+  ("^var\\b".r, VarKeyword),
   ("^class\\b".r, ClassKeyword),
   ("^if\\b".r, IfKeyword),
   ("^else\\b".r, ElseKeyword),
   ("^while\\b".r, WhileKeyword),
   ("^for\\b".r, ForKeyword),
+  ("^break\\b".r, BreakKeyword),
+  ("^continue\\b".r, ContinueKeyword),
+  ("^bool\\b".r, BoolTypeKeyword),
+  ("^int64\\b".r, Int64TypeKeyword),
+  ("^float64\\b".r, Float64TypeKeyword),
+  ("^String\\b".r, StringTypeKeyword),
   ("^true\\b".r, TrueKeyword),
   ("^false\\b".r, FalseKeyword),
-  ("^([A-Za-z][A-Za-z0-9_]+)\\b".r, Identifier),
+  ("^([A-Za-z][A-Za-z0-9_]*)\\b".r, Identifier),
   ("^(\\+|-)?([0-9]+\\.[0-9]+)\\b".r, FloatLiteral),  // floats first, to prevent int eating the integer part of float
   ("^(\\+|-)?(0x|0b|0o)?([0-9a-fA-F]+)\\b".r, IntLiteral),
   ("^\\(".r, LeftParen),
@@ -23,6 +31,10 @@ val regexes: List[(Regex, TokenType)] = List(
   ("^\\]".r, RightBracket),
   ("^\\{".r, LeftBrace),
   ("^\\}".r, RightBrace),
+  ("^\\.".r, Period),
+  ("^\\,".r, Comma),
+  ("^\\?".r, QuestionMark),
+  ("^\\:".r, Colon),
   ("^;".r, Semicolon),
   ("^\\+".r, Plus),
   ("^-".r, Minus),
@@ -81,6 +93,6 @@ def lexer(initialContent: String, filename: String): List[Token] =
           res.append(Token(tt, str, loc))
           charIdx += str.length
           content = content.drop(str.length)
-        case None => ??? // TODO handle lexer error
+        case None => throw new Exception(s"Unexpected character: $char [$loc]") // TODO handle lexer error
 
   return res.toList
