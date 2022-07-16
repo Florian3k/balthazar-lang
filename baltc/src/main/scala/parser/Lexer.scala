@@ -22,6 +22,7 @@ val regexes: List[(Regex, TokenType)] = List(
   ("^String\\b".r, StringTypeKeyword),
   ("^true\\b".r, TrueKeyword),
   ("^false\\b".r, FalseKeyword),
+  ("^null\\b".r, NullKeyword),
   ("^([A-Za-z][A-Za-z0-9_]*)\\b".r, Identifier),
   ("^(\\+|-)?([0-9]+\\.[0-9]+)\\b".r, FloatLiteral),  // floats first, to prevent int eating the integer part of float
   ("^(\\+|-)?(0x|0b|0o)?([0-9a-fA-F]+)\\b".r, IntLiteral),

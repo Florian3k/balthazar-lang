@@ -24,6 +24,7 @@ enum TokenType:
 
   case TrueKeyword
   case FalseKeyword
+  case NullKeyword
 
   case Identifier
   case IntLiteral

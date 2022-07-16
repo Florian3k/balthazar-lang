@@ -95,7 +95,7 @@ class LexerSuite extends munit.FunSuite:
       """def fun1(x: int64, y: String?): int64 {
         |  for (var i = 0; i < 7; i += 1) {
         |    if (x % 2 == 0x42) {
-        |      obj.method(x);
+        |      obj.method(null);
         |      continue;
         |    }
         |    break;
@@ -158,9 +158,9 @@ class LexerSuite extends munit.FunSuite:
       Token(Period, ".", loc(4, 10)),
       Token(Identifier, "method", loc(4, 11)),
       Token(LeftParen, "(", loc(4, 17)),
-      Token(Identifier, "x", loc(4, 18)),
-      Token(RightParen, ")", loc(4, 19)),
-      Token(Semicolon, ";", loc(4, 20)),
+      Token(NullKeyword, "null", loc(4, 18)),
+      Token(RightParen, ")", loc(4, 22)),
+      Token(Semicolon, ";", loc(4, 23)),
       // line 5
       Token(ContinueKeyword, "continue", loc(5, 7)),
       Token(Semicolon, ";", loc(5, 15)),
