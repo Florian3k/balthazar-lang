@@ -1,0 +1,13 @@
+{
+    "code": [
+        "OpConst", 0, 0,
+        "OpConst", 1, 0,
+        "OpConcat",
+        "OpPrintStr",
+        "OpRet"
+    ],
+    "constants": [
+        {"str": "ala ma "}, {"str": "kota"}
+    ],
+    "lines": []
+}
