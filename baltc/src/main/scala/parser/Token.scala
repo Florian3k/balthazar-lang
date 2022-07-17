@@ -7,14 +7,24 @@ case class Token(typ: TokenType, content: String, loc: Location)
 enum TokenType:
   // keywords
   case DefKeyword
+  case ReturnKeyword
+  case VarKeyword
   case ClassKeyword
   case IfKeyword
   case ElseKeyword
   case WhileKeyword
   case ForKeyword
+  case BreakKeyword
+  case ContinueKeyword
+
+  case BoolTypeKeyword
+  case Int64TypeKeyword
+  case Float64TypeKeyword
+  case StringTypeKeyword
 
   case TrueKeyword
   case FalseKeyword
+  case NullKeyword
 
   case Identifier
   case IntLiteral
@@ -29,6 +39,10 @@ enum TokenType:
   case RightBracket
   case LeftBrace
   case RightBrace
+  case Period
+  case Comma
+  case QuestionMark
+  case Colon
   case Semicolon
 
   // operators

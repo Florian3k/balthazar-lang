@@ -87,3 +87,111 @@ class LexerSuite extends munit.FunSuite:
     )
     assertEquals(res, expected)
   }
+
+  test("function definition with complicated body") {
+    val res = lexer(
+      //          10        20        30
+      // 1234567890123456789012345678901234567890
+      """def fun1(x: int64, y: String?): int64 {
+        |  for (var i = 0; i < 7; i += 1) {
+        |    if (x % 2 == 0x42) {
+        |      obj.method(null);
+        |      continue;
+        |    }
+        |    break;
+        |  }
+        |  -1.abs();
+        |  - 1.abs();
+        |  return 5;
+        |}
+        """.stripMargin,
+      "file1",
+    )
+    def loc(line: Int, char: Int) = Location("file1", line, char)
+    val expected = List(
+      // line 1
+      Token(DefKeyword, "def", loc(1, 1)),
+      Token(Identifier, "fun1", loc(1, 5)),
+      Token(LeftParen, "(", loc(1, 9)),
+      Token(Identifier, "x", loc(1, 10)),
+      Token(Colon, ":", loc(1, 11)),
+      Token(Int64TypeKeyword, "int64", loc(1, 13)),
+      Token(Comma, ",", loc(1, 18)),
+      Token(Identifier, "y", loc(1, 20)),
+      Token(Colon, ":", loc(1, 21)),
+      Token(StringTypeKeyword, "String", loc(1, 23)),
+      Token(QuestionMark, "?", loc(1, 29)),
+      Token(RightParen, ")", loc(1, 30)),
+      Token(Colon, ":", loc(1, 31)),
+      Token(Int64TypeKeyword, "int64", loc(1, 33)),
+      Token(LeftBrace, "{", loc(1, 39)),
+      // line 2
+      Token(ForKeyword, "for", loc(2, 3)),
+      Token(LeftParen, "(", loc(2, 7)),
+      Token(VarKeyword, "var", loc(2, 8)),
+      Token(Identifier, "i", loc(2, 12)),
+      Token(Assign, "=", loc(2, 14)),
+      Token(IntLiteral, "0", loc(2, 16)),
+      Token(Semicolon, ";", loc(2, 17)),
+      Token(Identifier, "i", loc(2, 19)),
+      Token(LessThan, "<", loc(2, 21)),
+      Token(IntLiteral, "7", loc(2, 23)),
+      Token(Semicolon, ";", loc(2, 24)),
+      Token(Identifier, "i", loc(2, 26)),
+      Token(Plus, "+", loc(2, 28)),
+      Token(Assign, "=", loc(2, 29)),
+      Token(IntLiteral, "1", loc(2, 31)),
+      Token(RightParen, ")", loc(2, 32)),
+      Token(LeftBrace, "{", loc(2, 34)),
+      // line 3
+      Token(IfKeyword, "if", loc(3, 5)),
+      Token(LeftParen, "(", loc(3, 8)),
+      Token(Identifier, "x", loc(3, 9)),
+      Token(Modulo, "%", loc(3, 11)),
+      Token(IntLiteral, "2", loc(3, 13)),
+      Token(Equal, "==", loc(3, 15)),
+      Token(IntLiteral, "0x42", loc(3, 18)),
+      Token(RightParen, ")", loc(3, 22)),
+      Token(LeftBrace, "{", loc(3, 24)),
+      // line 4
+      Token(Identifier, "obj", loc(4, 7)),
+      Token(Period, ".", loc(4, 10)),
+      Token(Identifier, "method", loc(4, 11)),
+      Token(LeftParen, "(", loc(4, 17)),
+      Token(NullKeyword, "null", loc(4, 18)),
+      Token(RightParen, ")", loc(4, 22)),
+      Token(Semicolon, ";", loc(4, 23)),
+      // line 5
+      Token(ContinueKeyword, "continue", loc(5, 7)),
+      Token(Semicolon, ";", loc(5, 15)),
+      // line 6
+      Token(RightBrace, "}", loc(6, 5)),
+      // line 7
+      Token(BreakKeyword, "break", loc(7, 5)),
+      Token(Semicolon, ";", loc(7, 10)),
+      // line 8
+      Token(RightBrace, "}", loc(8, 3)),
+      // line 9
+      Token(IntLiteral, "-1", loc(9, 3)),
+      Token(Period, ".", loc(9, 5)),
+      Token(Identifier, "abs", loc(9, 6)),
+      Token(LeftParen, "(", loc(9, 9)),
+      Token(RightParen, ")", loc(9, 10)),
+      Token(Semicolon, ";", loc(9, 11)),
+      // line 10
+      Token(Minus, "-", loc(10, 3)),
+      Token(IntLiteral, "1", loc(10, 5)),
+      Token(Period, ".", loc(10, 6)),
+      Token(Identifier, "abs", loc(10, 7)),
+      Token(LeftParen, "(", loc(10, 10)),
+      Token(RightParen, ")", loc(10, 11)),
+      Token(Semicolon, ";", loc(10, 12)),
+      // line 11
+      Token(ReturnKeyword, "return", loc(11, 3)),
+      Token(IntLiteral, "5", loc(11, 10)),
+      Token(Semicolon, ";", loc(11, 11)),
+      // line 12
+      Token(RightBrace, "}", loc(12, 1)),
+    )
+    assertEquals(res, expected)
+  }
