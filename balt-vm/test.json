@@ -2,12 +2,12 @@
     "code": [
         "OpConst", 0, 0,
         "OpConst", 1, 0,
-        "OpConcat",
-        "OpPrintStr",
+        "OpLtI64",
+        "OpPrint",
         "OpRet"
     ],
     "constants": [
-        {"str": "ala ma "}, {"str": "kota"}
+        "42", "10"
     ],
     "lines": []
 }

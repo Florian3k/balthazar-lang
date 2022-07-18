@@ -35,6 +35,17 @@ macro_rules! arith_arm {
     };
 }
 
+macro_rules! cmp_arm {
+    ($self:ident, $variant:ident, $operator:tt) => {
+        unsafe {
+            let rhs = $self.pop_val().$variant;
+            let lhs = $self.pop_val().$variant;
+            let v = $crate::value::Value { uint: u64::from(lhs $operator rhs) };
+            $self.push_val(v);
+        }
+    };
+}
+
 impl<'gc> VM<'gc> {
     pub fn new(chunk: Chunk<'gc>) -> Self {
         Self { chunk, stack: [Value {int: 0}; STACK_SIZE], sp: 0, ip: 0 }
@@ -73,10 +84,30 @@ impl<'gc> VM<'gc> {
                 OpMulI64 => arith_arm!(self, int, *),
                 OpDivI64 => arith_arm!(self, int, /),
 
+                OpLeqI64 => cmp_arm!(self, int, <=),
+                OpLtI64  => cmp_arm!(self, int, <),
+                OpGeqI64 => cmp_arm!(self, int, >=),
+                OpGtI64  => cmp_arm!(self, int, >),
+
                 OpAddF64 => arith_arm!(self, float, +),
                 OpSubF64 => arith_arm!(self, float, -),
                 OpMulF64 => arith_arm!(self, float, *),
                 OpDivF64 => arith_arm!(self, float, /),
+
+                OpLeqF64 => cmp_arm!(self, float, <=),
+                OpLtF64  => cmp_arm!(self, float, <),
+                OpGeqF64 => cmp_arm!(self, float, >=),
+                OpGtF64  => cmp_arm!(self, float, >),
+
+                OpEq     => {
+                    let rhs = self.pop_val().as_uint();
+                    let lhs = self.pop_val().as_uint();
+
+                    // naive equality works for ints (obviously), almost works for floats 
+                    // (not IEEE compliant but w/e) and will work for strings, when we starn interning them
+                    let res = rhs == lhs;
+                    self.push_val(Value{ uint: u64::from(res) })
+                }
 
                 OpPrint => {
                     let v = self.pop_val();
