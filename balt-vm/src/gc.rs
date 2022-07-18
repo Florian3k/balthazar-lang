@@ -41,7 +41,7 @@ pub fn allocate_obj<'a>(inner: ObjInner) -> Value<'a> {
     })  
 }
 
-unsafe fn free_all_objs() {
+pub unsafe fn free_all_objs() {
     GC_STATE.with(|gc| {
         let mut next = gc.borrow().head;
         while let Some(p) = next {

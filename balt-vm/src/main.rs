@@ -110,6 +110,7 @@ fn main() -> io::Result<()> {
     dbg!(&c);
     let mut vm = VM::new(c);
     vm.run().unwrap();
+    unsafe { gc::free_all_objs() };
   
     Ok(())
 }

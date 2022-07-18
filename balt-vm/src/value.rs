@@ -1,7 +1,5 @@
 use std::fmt::Debug;
-use std::cell::RefCell;
 use std::marker::PhantomData;
-use std::ptr::NonNull;
 
 use crate::gc::GcObj;
 
@@ -55,6 +53,8 @@ impl<'gc> Value<'gc> {
         let obj: &'gc Obj = self.obj.0.as_ref();
         match &obj.inner { 
             ObjInner::String(s) => s,
+
+            #[allow(unreachable_patterns)]
             _ => panic!("bad unsafe as_obj_* coersion")
         }
     }
