@@ -1,134 +1,152 @@
-#[repr(u8)]
-#[derive(Debug, Eq, PartialEq)]
-enum Opcode {
-  OpPush8 = 1,
-  // OpPush32 = 2,
-  OpAddInt8 = 3,
-  // OpAddInt32 = 4,
-}
+mod bytecode;
+mod chunk;
+mod gc;
+mod value;
 
-use Opcode::*;
+use bytecode::Op::{self, *};
+use gc::allocate_obj;
+use value::{ObjInner, ObjString, Value};
 
+use chunk::Chunk;
+use std::fs::read_to_string;
+use std::{error::Error, io};
+
+const STACK_SIZE: usize = 8196;
 struct VM {
-  consts: Vec<u8>,
-  code: Vec<u8>,
-  stack: [u8; 8192],
-  sp: usize,
-  // bp: usize,
-  ip: usize,
+    chunk: Chunk,
+    stack: [Value; STACK_SIZE],
+    sp: usize,
+    ip: usize,
 }
 
-impl TryFrom<u8> for Opcode {
-  type Error = ();
-  fn try_from(value: u8) -> Result<Self, ()> {
-    match value {
-      1 => Ok(OpPush8),
-      // 2 => Ok(OpPush32),
-      3 => Ok(OpAddInt8),
-      // 4 => Ok(OpAddInt32),
-      _ => Err(()),
-    }
-  }
+/// Generates Op arm for arithmetic expressions
+/// Takes `self`, `Value` variant and arithmetic operator
+macro_rules! arith_arm {
+    ($s:ident, $variant:ident, $operator:tt) => {
+        {
+            // coersing Value variants is safe for now
+            unsafe {
+                let rhs = $s.pop_val().$variant;
+                let lhs = $s.pop_val().$variant;
+                $s.push_val($crate::value::Value{$variant: lhs $operator rhs})
+            }
+        }
+    };
+}
+
+macro_rules! cmp_arm {
+    ($self:ident, $variant:ident, $operator:tt) => {
+        unsafe {
+            let rhs = $self.pop_val().$variant;
+            let lhs = $self.pop_val().$variant;
+            let v = $crate::value::Value { uint: u64::from(lhs $operator rhs) };
+            $self.push_val(v);
+        }
+    };
 }
 
 impl VM {
-  fn new(code: Vec<u8>, consts: Vec<u8>) -> VM {
-    VM {
-      consts,
-      code,
-      stack: [0].repeat(8192).try_into().unwrap(),
-      sp: 0,
-      // bp: 0,
-      ip: 0,
-    }
-  }
-
-  fn debug(self: &VM) {
-    println!();
-    println!("--- VM debug start");
-    println!(" Constants ({}): ", self.consts.len());
-    for (idx, val) in self.consts.iter().enumerate() {
-      println!("  {} | {}", idx, val);
-    }
-    println!(" Code ({}): ", self.code.len());
-    let mut i = 0;
-    while i < self.code.len() {
-      let op = Opcode::try_from(self.code[i]).unwrap();
-      print!("  {} | op  {:?}", i, op);
-      if i == self.ip {
-        println!(" <-- ip");
-      } else {
-        println!("");
-      }
-      if op == OpPush8 {
-        i += 1;
-        println!("  {} | val {}", i, self.code[i]);
-      }
-      i += 1;
-    }
-    println!(" Stack ({}): ", self.sp);
-    for i in 0..self.sp {
-      println!("  {} | {}", i, self.stack[i])
-    }
-    println!("--- VM debug end ---");
-    println!();
-  }
-
-  fn push(self: &mut VM, byte: u8) {
-    self.stack[self.sp] = byte;
-    self.sp += 1;
-  }
-
-  fn pop(self: &mut VM) -> u8 {
-    self.sp -= 1;
-    self.stack[self.sp]
-  }
-
-  fn exec(self: &mut VM) {
-    let code: u8 = self.code[self.ip];
-    self.ip += 1;
-    match Opcode::try_from(code).ok() {
-      Some(op) => match op {
-        OpPush8 => {
-          println!("Executing {:?}", op);
-          self.push(self.consts[self.code[self.ip] as usize]);
-          self.ip += 1;
+    pub fn new(chunk: Chunk) -> Self {
+        Self {
+            chunk,
+            stack: [Value { int: 0 }; STACK_SIZE],
+            sp: 0,
+            ip: 0,
         }
-        // OpPush32 => panic!("TODO OpPush32"),
-        OpAddInt8 => {
-          println!("Executing {:?}", op);
-          let val = self.pop();
-          self.stack[self.sp - 1] += val;
-        }
-        // OpAddInt32 => panic!("TODO OpAddInt32"),
-      },
-      None => panic!("Error: unexpected opcode {}", code),
     }
-  }
+
+    fn push_val(&mut self, v: Value) {
+        self.stack[self.sp] = v;
+        self.sp += 1;
+    }
+
+    fn pop_val(&mut self) -> Value {
+        self.sp -= 1;
+        self.stack[self.sp]
+    }
+
+    /// Consumes litle-endian u16 from under `ip`
+    fn read_u16(&mut self) -> u16 {
+        let res: u16 =
+            ((self.chunk.code[self.ip + 1] as u16) << 8) | self.chunk.code[self.ip] as u16;
+        self.ip += 2;
+        res
+    }
+
+    pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
+        loop {
+            let op: Op = self.chunk.code[self.ip].try_into()?;
+            self.ip += 1;
+            match op {
+                OpRet => break,
+                OpConst => {
+                    let const_index = self.read_u16();
+                    let v = self.chunk.constants[const_index as usize];
+                    self.push_val(v);
+                }
+                OpAddI64 => arith_arm!(self, int, +),
+                OpSubI64 => arith_arm!(self, int, -),
+                OpMulI64 => arith_arm!(self, int, *),
+                OpDivI64 => arith_arm!(self, int, /),
+
+                OpLeqI64 => cmp_arm!(self, int, <=),
+                OpLtI64 => cmp_arm!(self, int, <),
+                OpGeqI64 => cmp_arm!(self, int, >=),
+                OpGtI64 => cmp_arm!(self, int, >),
+
+                OpAddF64 => arith_arm!(self, float, +),
+                OpSubF64 => arith_arm!(self, float, -),
+                OpMulF64 => arith_arm!(self, float, *),
+                OpDivF64 => arith_arm!(self, float, /),
+
+                OpLeqF64 => cmp_arm!(self, float, <=),
+                OpLtF64 => cmp_arm!(self, float, <),
+                OpGeqF64 => cmp_arm!(self, float, >=),
+                OpGtF64 => cmp_arm!(self, float, >),
+
+                OpEq => {
+                    let rhs = self.pop_val().as_uint();
+                    let lhs = self.pop_val().as_uint();
+
+                    // naive equality works for ints (obviously), almost works for floats
+                    // (not IEEE compliant but w/e) and will work for strings, when we starn interning them
+                    let res = rhs == lhs;
+                    self.push_val(Value {
+                        uint: u64::from(res),
+                    })
+                }
+
+                OpPrint => {
+                    let v = self.pop_val();
+                    println!("{:?}", v);
+                }
+                OpConcat => {
+                    let rhs = unsafe { self.pop_val().as_obj_string_ref() };
+                    // clone rhs string so we can borrow vm for another pop
+                    let rhs_str = rhs.0.clone();
+                    let lhs = unsafe { self.pop_val().as_obj_string_ref() };
+                    let mut res_str = lhs.0.clone();
+                    res_str.push_str(&rhs_str);
+                    let res = allocate_obj(ObjInner::String(ObjString(res_str)));
+                    self.push_val(res);
+                }
+                OpPrintStr => {
+                    let s = unsafe { self.pop_val().as_obj_string_ref() };
+                    println!("{}", s.0);
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
-fn main() {
-  let consts: Vec<u8> = vec![2, 5];
-  /*
-  coś
-  coś
-  coś
-  exit
-  
-  coś
-  coś
-  ret
-  
-  */
-  let code: Vec<u8> = vec![OpPush8 as u8, 0, OpPush8 as u8, 1, OpAddInt8 as u8];
-  let mut vm: VM = VM::new(code, consts);
+fn main() -> io::Result<()> {
+    let s = read_to_string("test.json").unwrap();
+    let c = Chunk::from_str(&s).unwrap();
+    dbg!(&c);
+    let mut vm = VM::new(c);
+    vm.run().unwrap();
+    unsafe { gc::free_all_objs() };
 
-  vm.debug();
-  vm.exec();
-  vm.debug();
-  vm.exec();
-  vm.debug();
-  vm.exec();
-  vm.debug();
-  println!("Hello, world!");
+    Ok(())
 }
