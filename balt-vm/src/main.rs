@@ -13,9 +13,9 @@ use std::fs::{read_to_string};
 
 
 const STACK_SIZE: usize = 8196;
-struct VM<'gc> {
-    chunk: Chunk<'gc>,
-    stack: [Value<'gc>; STACK_SIZE],
+struct VM {
+    chunk: Chunk,
+    stack: [Value; STACK_SIZE],
     sp: usize,
     ip: usize,
 }
@@ -46,12 +46,12 @@ macro_rules! cmp_arm {
     };
 }
 
-impl<'gc> VM<'gc> {
-    pub fn new(chunk: Chunk<'gc>) -> Self {
+impl VM {
+    pub fn new(chunk: Chunk) -> Self {
         Self { chunk, stack: [Value {int: 0}; STACK_SIZE], sp: 0, ip: 0 }
     }
 
-    fn push_val(&mut self, v: Value<'gc>) {
+    fn push_val(&mut self, v: Value) {
         self.stack[self.sp] = v;
         self.sp += 1;
     }

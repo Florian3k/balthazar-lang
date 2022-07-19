@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Result as DeserResult;
 
 #[derive(Debug)]
-pub struct Chunk<'gc> {
+pub struct Chunk {
   pub code: Vec<u8>,
-  pub constants: Vec<Value<'gc>>,
+  pub constants: Vec<Value>,
   pub lines: Vec<usize>,
 }
 
-impl<'gc> Chunk<'gc> {
+impl Chunk {
   pub fn from_str(s: &str) -> DeserResult<Self> {
     let SerChunk {
       code,
@@ -54,7 +54,7 @@ enum SerConstant {
   Str { str: String },
 }
 
-impl<'gc> From<&SerConstant> for Value<'gc> {
+impl From<&SerConstant> for Value {
   fn from(sc: &SerConstant) -> Self {
     match sc {
       SerConstant::Num(s) => Value {

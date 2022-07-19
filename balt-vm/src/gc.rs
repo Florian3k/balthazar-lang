@@ -30,7 +30,7 @@ thread_local! { static GC_STATE: RefCell<GcState> = Default::default() }
 
 
 
-pub fn allocate_obj<'a>(inner: ObjInner) -> Value<'a> {
+pub fn allocate_obj(inner: ObjInner) -> Value {
     GC_STATE.with(|gc| {
         let mut gc = gc.borrow_mut();
         let prev = gc.head;
@@ -44,8 +44,10 @@ pub fn allocate_obj<'a>(inner: ObjInner) -> Value<'a> {
 pub unsafe fn free_all_objs() {
     GC_STATE.with(|gc| {
         let mut next = gc.borrow().head;
+        let mut count = 0;
         while let Some(p) = next {
             next = p.header.next;
+            count += 1;
             let _ = Box::from_raw(p.0.as_ptr());
         }
     })

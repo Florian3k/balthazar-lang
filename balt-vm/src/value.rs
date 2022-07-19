@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::marker::PhantomData;
 
 use crate::gc::GcObj;
 
@@ -25,16 +24,15 @@ impl Obj {
 
 
 #[derive(Copy, Clone)]
-pub union Value<'gc> {
+pub union Value {
     pub float: f64,
     pub int:   i64,
     pub uint:  u64,
     pub obj: GcObj,
-    _marker: PhantomData<&'gc ()>,
 }
 
 #[allow(dead_code)]
-impl<'gc> Value<'gc> {
+impl Value {
     // casts to number types are safe
     pub fn as_int(self) -> i64 {
         unsafe { self.int }
@@ -49,8 +47,10 @@ impl<'gc> Value<'gc> {
         self.obj
     }
 
-    pub unsafe fn as_obj_string_ref(self) -> &'gc ObjString {
-        let obj: &'gc Obj = self.obj.0.as_ref();
+    /// # Safety
+    /// reference only usable while GC is alive, no idea how to encode it properly
+    pub unsafe fn as_obj_string_ref<'a>(self) -> &'a ObjString {
+        let obj: &Obj = self.obj.0.as_ref();
         match &obj.inner { 
             ObjInner::String(s) => s,
 
@@ -60,7 +60,7 @@ impl<'gc> Value<'gc> {
     }
 }
 
-impl<'gc> Debug for Value<'gc> {
+impl Debug for Value {
     // for now just print hexadecimal value 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "0x{:x}", self.as_uint())
