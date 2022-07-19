@@ -1,16 +1,19 @@
-
-use crate::value::{Value, Obj, ObjInner, ObjHeader};
-use std::{cell::RefCell, ptr::NonNull, ops::{Deref, DerefMut}};
+use crate::value::{Obj, ObjHeader, ObjInner, Value};
+use std::{
+    cell::RefCell,
+    ops::{Deref, DerefMut},
+    ptr::NonNull,
+};
 
 #[derive(Default)]
 struct GcState {
-    head: Option<GcObj>
+    head: Option<GcObj>,
 }
 
 #[derive(Clone, Copy)]
 pub struct GcObj(pub NonNull<Obj>);
 
-impl Deref for GcObj{
+impl Deref for GcObj {
     type Target = Obj;
 
     fn deref(&self) -> &Self::Target {
@@ -22,23 +25,24 @@ impl Deref for GcObj{
 impl DerefMut for GcObj {
     fn deref_mut(&mut self) -> &mut Self::Target {
         // this should be safe, because only live GcObjs should be accessible
-        unsafe { &mut *self.0.as_ptr()}
+        unsafe { &mut *self.0.as_ptr() }
     }
 }
 
 thread_local! { static GC_STATE: RefCell<GcState> = Default::default() }
 
-
-
 pub fn allocate_obj(inner: ObjInner) -> Value {
     GC_STATE.with(|gc| {
         let mut gc = gc.borrow_mut();
         let prev = gc.head;
-        let res = Box::new(Obj { header: ObjHeader { next: prev }, inner});
-        let res = unsafe {NonNull::new_unchecked( Box::into_raw(res) )};
+        let res = Box::new(Obj {
+            header: ObjHeader { next: prev },
+            inner,
+        });
+        let res = unsafe { NonNull::new_unchecked(Box::into_raw(res)) };
         gc.head = Some(GcObj(res));
-        Value{ obj: GcObj(res) }
-    })  
+        Value { obj: GcObj(res) }
+    })
 }
 
 pub unsafe fn free_all_objs() {

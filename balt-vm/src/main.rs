@@ -1,16 +1,15 @@
 mod bytecode;
 mod chunk;
-mod value;
 mod gc;
+mod value;
 
-use gc::allocate_obj;
-use value::{Value, ObjInner, ObjString};
 use bytecode::Op::{self, *};
+use gc::allocate_obj;
+use value::{ObjInner, ObjString, Value};
 
-use std::{io, error::Error};
 use chunk::Chunk;
-use std::fs::{read_to_string};
-
+use std::fs::read_to_string;
+use std::{error::Error, io};
 
 const STACK_SIZE: usize = 8196;
 struct VM {
@@ -48,7 +47,12 @@ macro_rules! cmp_arm {
 
 impl VM {
     pub fn new(chunk: Chunk) -> Self {
-        Self { chunk, stack: [Value {int: 0}; STACK_SIZE], sp: 0, ip: 0 }
+        Self {
+            chunk,
+            stack: [Value { int: 0 }; STACK_SIZE],
+            sp: 0,
+            ip: 0,
+        }
     }
 
     fn push_val(&mut self, v: Value) {
@@ -63,7 +67,8 @@ impl VM {
 
     /// Consumes litle-endian u16 from under `ip`
     fn read_u16(&mut self) -> u16 {
-        let res : u16 = ((self.chunk.code[self.ip + 1] as u16) << 8) | self.chunk.code[self.ip] as u16;
+        let res: u16 =
+            ((self.chunk.code[self.ip + 1] as u16) << 8) | self.chunk.code[self.ip] as u16;
         self.ip += 2;
         res
     }
@@ -73,21 +78,21 @@ impl VM {
             let op: Op = self.chunk.code[self.ip].try_into()?;
             self.ip += 1;
             match op {
-                OpRet   => break,
+                OpRet => break,
                 OpConst => {
                     let const_index = self.read_u16();
                     let v = self.chunk.constants[const_index as usize];
                     self.push_val(v);
-                },
+                }
                 OpAddI64 => arith_arm!(self, int, +),
                 OpSubI64 => arith_arm!(self, int, -),
                 OpMulI64 => arith_arm!(self, int, *),
                 OpDivI64 => arith_arm!(self, int, /),
 
                 OpLeqI64 => cmp_arm!(self, int, <=),
-                OpLtI64  => cmp_arm!(self, int, <),
+                OpLtI64 => cmp_arm!(self, int, <),
                 OpGeqI64 => cmp_arm!(self, int, >=),
-                OpGtI64  => cmp_arm!(self, int, >),
+                OpGtI64 => cmp_arm!(self, int, >),
 
                 OpAddF64 => arith_arm!(self, float, +),
                 OpSubF64 => arith_arm!(self, float, -),
@@ -95,24 +100,26 @@ impl VM {
                 OpDivF64 => arith_arm!(self, float, /),
 
                 OpLeqF64 => cmp_arm!(self, float, <=),
-                OpLtF64  => cmp_arm!(self, float, <),
+                OpLtF64 => cmp_arm!(self, float, <),
                 OpGeqF64 => cmp_arm!(self, float, >=),
-                OpGtF64  => cmp_arm!(self, float, >),
+                OpGtF64 => cmp_arm!(self, float, >),
 
-                OpEq     => {
+                OpEq => {
                     let rhs = self.pop_val().as_uint();
                     let lhs = self.pop_val().as_uint();
 
-                    // naive equality works for ints (obviously), almost works for floats 
+                    // naive equality works for ints (obviously), almost works for floats
                     // (not IEEE compliant but w/e) and will work for strings, when we starn interning them
                     let res = rhs == lhs;
-                    self.push_val(Value{ uint: u64::from(res) })
+                    self.push_val(Value {
+                        uint: u64::from(res),
+                    })
                 }
 
                 OpPrint => {
                     let v = self.pop_val();
                     println!("{:?}", v);
-                },
+                }
                 OpConcat => {
                     let rhs = unsafe { self.pop_val().as_obj_string_ref() };
                     // clone rhs string so we can borrow vm for another pop
@@ -121,8 +128,8 @@ impl VM {
                     let mut res_str = lhs.0.clone();
                     res_str.push_str(&rhs_str);
                     let res = allocate_obj(ObjInner::String(ObjString(res_str)));
-                    self.push_val(res); 
-                },
+                    self.push_val(res);
+                }
                 OpPrintStr => {
                     let s = unsafe { self.pop_val().as_obj_string_ref() };
                     println!("{}", s.0);
@@ -131,9 +138,7 @@ impl VM {
         }
         Ok(())
     }
-
 }
-
 
 fn main() -> io::Result<()> {
     let s = read_to_string("test.json").unwrap();
@@ -142,6 +147,6 @@ fn main() -> io::Result<()> {
     let mut vm = VM::new(c);
     vm.run().unwrap();
     unsafe { gc::free_all_objs() };
-  
+
     Ok(())
 }
