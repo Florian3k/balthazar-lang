@@ -228,41 +228,53 @@ class Parser(var input: List[Token]):
       case Times        => Binop.Times
       case Div          => Binop.Div
       case Modulo       => Binop.Modulo
-      case Or           => Binop.Or
-      case And          => Binop.And
+      case ShiftLeft    => Binop.ShiftLeft
+      case ShiftRight   => Binop.ShiftRight
+      case BitAnd       => Binop.BitAnd
+      case BitOr        => Binop.BitOr
       case LessEqual    => Binop.LessEqual
       case LessThan     => Binop.LessThan
       case GreaterEqual => Binop.GreaterEqual
       case GreaterThan  => Binop.GreaterThan
       case Equal        => Binop.Equal
       case NotEqual     => Binop.NotEqual
-      case ShiftLeft    => Binop.ShiftLeft
-      case ShiftRight   => Binop.ShiftRight
+      case BoolAnd      => Binop.BoolAnd
+      case BoolOr       => Binop.BoolOr
       case _            => ???
 
   def parseExpr(): Expr =
-    parseLeftAssocBinopExpr(
+    parseBinopExpr(
       List(
-        List(Equal, NotEqual),
-        List(LessThan, LessEqual, GreaterThan, GreaterEqual),
-        List(Or),
-        List(And),
-        List(ShiftLeft, ShiftRight),
-        List(Plus, Minus),
-        List(Times, Div, Modulo),
+        Right(List(BoolOr)),
+        Right(List(BoolAnd)),
+        Left(List(Equal, NotEqual)),
+        Left(List(LessThan, LessEqual, GreaterThan, GreaterEqual)),
+        Left(List(BitOr)),
+        Left(List(BitAnd)),
+        Left(List(ShiftLeft, ShiftRight)),
+        Left(List(Plus, Minus)),
+        Left(List(Times, Div, Modulo)),
       )
     )
 
-  def parseLeftAssocBinopExpr(table: List[List[TokenType]]): Expr =
+  def parseBinopExpr(
+      table: List[Either[List[TokenType], List[TokenType]]]
+  ): Expr =
     table match
-      case tokens :: rest =>
-        var expr = parseLeftAssocBinopExpr(rest)
+      case Left(tokens) :: rest =>
+        var expr = parseBinopExpr(rest)
         while tokens.contains(peekType) do
           val tt = peekType
           consumeToken(tt)
-          expr =
-            BinaryExpr(expr, tokenToBinop(tt), parseLeftAssocBinopExpr(rest))
+          expr = BinaryExpr(expr, tokenToBinop(tt), parseBinopExpr(rest))
         expr
+      case Right(tokens) :: rest =>
+        val expr = parseBinopExpr(rest)
+        if tokens.contains(peekType) then
+          val tt = peekType
+          consumeToken(tt)
+          BinaryExpr(expr, tokenToBinop(tt), parseBinopExpr(table))
+        else expr
       case Nil =>
         parseUnaryExpr()
 
@@ -296,9 +308,10 @@ class Parser(var input: List[Token]):
           case Period =>
             consumeToken(Period)
             val field = consumeIdentifier()
-            if peekType == LeftParen then
-              expr = MethodCallExpr(expr, field, parseCallArgs())
-            else ObjAccessExpr(expr, field)
+            expr =
+              if peekType == LeftParen then
+                MethodCallExpr(expr, field, parseCallArgs())
+              else ObjAccessExpr(expr, field)
           case t =>
             break
     }

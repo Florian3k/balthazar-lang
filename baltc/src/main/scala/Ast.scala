@@ -69,16 +69,18 @@ enum Binop:
   case Times
   case Div
   case Modulo
-  case Or
-  case And
+  case ShiftLeft
+  case ShiftRight
+  case BitAnd
+  case BitOr
   case LessEqual
   case LessThan
   case GreaterEqual
   case GreaterThan
   case Equal
   case NotEqual
-  case ShiftLeft
-  case ShiftRight
+  case BoolAnd
+  case BoolOr
 
 enum Unop:
   case Minus

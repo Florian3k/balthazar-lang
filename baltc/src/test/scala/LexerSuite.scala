@@ -34,6 +34,21 @@ class LexerSuite extends munit.FunSuite:
     assertEquals(res, expected)
   }
 
+  test("differentiate between binary and boolean and/or") {
+    val res = lexer("& && & && || | || |", "file1")
+    val expected = List(
+      Token(BitAnd, "&", Location("file1", 1, 1)),
+      Token(BoolAnd, "&&", Location("file1", 1, 3)),
+      Token(BitAnd, "&", Location("file1", 1, 6)),
+      Token(BoolAnd, "&&", Location("file1", 1, 8)),
+      Token(BoolOr, "||", Location("file1", 1, 11)),
+      Token(BitOr, "|", Location("file1", 1, 14)),
+      Token(BoolOr, "||", Location("file1", 1, 16)),
+      Token(BitOr, "|", Location("file1", 1, 19)),
+    )
+    assertEquals(res, expected)
+  }
+
   test("lex modulo operator") {
     val res = lexer("%", "file1")
     val expected = List(

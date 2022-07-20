@@ -61,3 +61,78 @@ class ParserSuite extends munit.FunSuite:
       ),
     )
   }
+
+  test("class definition and boolean operators") {
+    val tokens = lexer(
+      """class Foo {
+        |  var field1: int64;
+        |  var field2: float64;
+        |
+        |  def Foo() {
+        |    obj.call(1, 2).field.other(3)(4, 5);
+        |  }
+        |
+        |  def bar(): bool {
+        |    return a || b || c == d && e && f;
+        |  }
+        |}
+        """.stripMargin,
+      "file1",
+    )
+    val tree = Parser(tokens).parseProgram()
+    assertEquals(
+      tree,
+      List(
+        ClassDecl(
+          "Foo",
+          List(("field1", Int64), ("field2", Float64)),
+          List(
+            FunctionDecl(
+              "Foo",
+              List(),
+              None,
+              List(
+                ExprStatement(
+                  FuncCallExpr(
+                    MethodCallExpr(
+                      ObjAccessExpr(
+                        MethodCallExpr(VariableExpr("obj"), "call", List(Int64Literal(1), Int64Literal(2))),
+                        "field",
+                      ),
+                      "other",
+                      List(Int64Literal(3)),
+                    ),
+                    List(Int64Literal(4), Int64Literal(5)),
+                  )
+                )
+              ),
+            ),
+            FunctionDecl(
+              "bar",
+              List(),
+              Some(Bool),
+              List(
+                ReturnStatement(
+                  Some(
+                    BinaryExpr(
+                      VariableExpr("a"),
+                      Binop.BoolOr,
+                      BinaryExpr(
+                        VariableExpr("b"),
+                        Binop.BoolOr,
+                        BinaryExpr(
+                          BinaryExpr(VariableExpr("c"), Binop.Equal, VariableExpr("d")),
+                          Binop.BoolAnd,
+                          BinaryExpr(VariableExpr("e"), Binop.BoolAnd, VariableExpr("f")),
+                        ),
+                      ),
+                    )
+                  )
+                )
+              ),
+            ),
+          ),
+        )
+      ),
+    )
+  }
