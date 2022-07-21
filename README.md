@@ -11,6 +11,14 @@ Currently in early stages of development.
  - [@Florian3k](https://github.com/Florian3k)
  - [@Kristopher38](https://github.com/Kristopher38)
 
+### Progress
+- Compiler
+  - lexer/parser - DONE - error reporting to be improved
+  - typechecker - 0%
+  - bytecode generation - 0%
+- VM
+  - TODO <!-- fill out main areas of VM -->
+
 ### Language overview
 
 TODO
