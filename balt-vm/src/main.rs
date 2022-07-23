@@ -135,11 +135,9 @@ impl VM {
                 }
                 OpConcat => {
                     let rhs = unsafe { self.pop_val().as_obj_string_ref() };
-                    // clone rhs string so we can borrow vm for another pop
-                    let rhs_str = rhs.0.clone();
                     let lhs = unsafe { self.pop_val().as_obj_string_ref() };
                     let mut res_str = lhs.0.clone();
-                    res_str.push_str(&rhs_str);
+                    res_str.push_str(&rhs.0);
                     let res = self.allocate_string(res_str);
                     self.push_val(res);
                 }
