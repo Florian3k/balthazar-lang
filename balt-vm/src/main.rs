@@ -5,9 +5,10 @@ mod value;
 
 use bytecode::Op::{self, *};
 use gc::allocate_obj;
-use value::{ObjInner, ObjString, Value};
+use value::{ObjInner, Value};
 
 use chunk::Chunk;
+use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::{error::Error, io};
 
@@ -17,6 +18,7 @@ struct VM {
     stack: [Value; STACK_SIZE],
     sp: usize,
     ip: usize,
+    strings: HashMap<String, Value>,
 }
 
 /// Generates Op arm for arithmetic expressions
@@ -46,12 +48,13 @@ macro_rules! cmp_arm {
 }
 
 impl VM {
-    pub fn new(chunk: Chunk) -> Self {
+    pub fn new(chunk: Chunk, string_vec: Vec<(String, Value)>) -> Self {
         Self {
             chunk,
             stack: [Value { int: 0 }; STACK_SIZE],
             sp: 0,
             ip: 0,
+            strings: string_vec.into_iter().collect(),
         }
     }
 
@@ -71,6 +74,16 @@ impl VM {
             ((self.chunk.code[self.ip + 1] as u16) << 8) | self.chunk.code[self.ip] as u16;
         self.ip += 2;
         res
+    }
+
+    /// Allocates or returns already allocated `Obj` containing given String
+    /// All `ObjString`s should be allocated using this function
+    fn allocate_string(&mut self, s: String) -> Value {
+        let obj = self
+            .strings
+            .entry(s.clone())
+            .or_insert_with(|| allocate_obj(ObjInner::String(s.into())));
+        *obj
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
@@ -122,12 +135,10 @@ impl VM {
                 }
                 OpConcat => {
                     let rhs = unsafe { self.pop_val().as_obj_string_ref() };
-                    // clone rhs string so we can borrow vm for another pop
-                    let rhs_str = rhs.0.clone();
                     let lhs = unsafe { self.pop_val().as_obj_string_ref() };
                     let mut res_str = lhs.0.clone();
-                    res_str.push_str(&rhs_str);
-                    let res = allocate_obj(ObjInner::String(ObjString(res_str)));
+                    res_str.push_str(&rhs.0);
+                    let res = self.allocate_string(res_str);
                     self.push_val(res);
                 }
                 OpPrintStr => {
@@ -142,9 +153,9 @@ impl VM {
 
 fn main() -> io::Result<()> {
     let s = read_to_string("test.json").unwrap();
-    let c = Chunk::from_str(&s).unwrap();
+    let (c, sv) = Chunk::from_str(&s).unwrap();
     dbg!(&c);
-    let mut vm = VM::new(c);
+    let mut vm = VM::new(c, sv);
     vm.run().unwrap();
     unsafe { gc::free_all_objs() };
 

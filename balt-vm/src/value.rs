@@ -7,6 +7,12 @@ pub struct ObjHeader {
 }
 
 pub struct ObjString(pub String);
+
+impl From<String> for ObjString {
+    fn from(s: String) -> Self {
+        ObjString(s)
+    }
+}
 pub enum ObjInner {
     String(ObjString),
 }

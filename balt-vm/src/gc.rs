@@ -54,5 +54,6 @@ pub unsafe fn free_all_objs() {
             count += 1;
             let _ = Box::from_raw(p.0.as_ptr());
         }
+        println!("freed {count} objs");
     })
 }

@@ -11,21 +11,36 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn from_str(s: &str) -> DeserResult<Self> {
+    /// Builds `Chunk` from serialised JSON. Returns `Chunk` and a `Vec` of produced strings
+    pub fn from_str(s: &str) -> DeserResult<(Self, Vec<(String, Value)>)> {
         let SerChunk {
             code,
             constants,
             lines,
         } = serde_json::from_str(s)?;
-        Ok(Self {
+        let mut strings = Vec::new();
+        let into_constant = |sc: &SerConstant| match sc {
+            SerConstant::Num(s) => Value {
+                uint: s.parse().unwrap(),
+            },
+            SerConstant::Str { str } => {
+                // no deduplication - we assume that bytecode is correct, i.e. every constant string is unique
+                // that assumption probably won't hold when we introduce functions
+                let v = allocate_obj(ObjInner::String(ObjString(str.clone())));
+                strings.push((str.clone(), v));
+                v
+            }
+        };
+        let c = Self {
             code: code.iter().map(Into::into).collect(),
             constants: constants
                 .iter()
                 // TODO: graceful error handling
-                .map(Into::into)
+                .map(into_constant)
                 .collect(),
             lines: lines.iter().map(|n| *n as usize).collect(),
-        })
+        };
+        Ok((c, strings))
     }
 }
 
@@ -52,17 +67,6 @@ impl From<&SerOp> for u8 {
 enum SerConstant {
     Num(String),
     Str { str: String },
-}
-
-impl From<&SerConstant> for Value {
-    fn from(sc: &SerConstant) -> Self {
-        match sc {
-            SerConstant::Num(s) => Value {
-                uint: s.parse().unwrap(),
-            },
-            SerConstant::Str { str } => allocate_obj(ObjInner::String(ObjString(str.clone()))),
-        }
-    }
 }
 
 /// Helper struct for deserialization
