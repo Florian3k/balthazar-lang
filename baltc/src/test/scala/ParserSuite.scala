@@ -28,7 +28,7 @@ class ParserSuite extends munit.FunSuite:
     assertEquals(
       tree,
       List(
-        FunctionDecl(
+        FunctionDecl[Untyped](
           name = "fun1",
           params = List(("x", Int64), ("y", Nullable(String))),
           retType = Some(Int64),
@@ -83,7 +83,7 @@ class ParserSuite extends munit.FunSuite:
     assertEquals(
       tree,
       List(
-        ClassDecl(
+        ClassDecl[Untyped](
           "Foo",
           List(("field1", Int64), ("field2", Float64)),
           List(
