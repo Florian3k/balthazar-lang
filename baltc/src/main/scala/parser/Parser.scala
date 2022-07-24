@@ -310,10 +310,7 @@ class Parser(var input: List[Token]):
           case Period =>
             consumeToken(Period)
             val field = consumeIdentifier()
-            expr =
-              if peekType == LeftParen then
-                MethodCallExpr(expr, field, parseCallArgs())
-              else ObjAccessExpr(expr, field)
+            expr = ObjAccessExpr(expr, field)
           case t =>
             break
     }

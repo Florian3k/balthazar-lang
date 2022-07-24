@@ -20,7 +20,7 @@ enum Statement[Typ[_]]:
       retType: Option[Type],
       body: List[Statement[Typ]],
   ) extends Statement[Typ]
-  case VarDecl[Typ[_]](name: String, typ: Option[Type], expr: Expr[Typ])
+  case VarDecl[Typ[_]](name: String, typ: Option[Type], expr: Typ[Expr[Typ]])
       extends Statement[Typ]
 
   case IfStatement[Typ[_]](
@@ -38,11 +38,16 @@ enum Statement[Typ[_]]:
   ) extends Statement[Typ]
   case BreakStatement[Typ[_]]() extends Statement[Typ]
   case ContinueStatement[Typ[_]]() extends Statement[Typ]
-  case ReturnStatement[Typ[_]](expr: Option[Typ[Expr[Typ]]]) extends Statement[Typ]
-
-  case VarAssign[Typ[_]](name: String, expr: Typ[Expr[Typ]]) extends Statement[Typ]
-  case FieldAssign[Typ[_]](obj: Typ[Expr[Typ]], field: String, expr: Typ[Expr[Typ]])
+  case ReturnStatement[Typ[_]](expr: Option[Typ[Expr[Typ]]])
       extends Statement[Typ]
+
+  case VarAssign[Typ[_]](name: String, expr: Typ[Expr[Typ]])
+      extends Statement[Typ]
+  case FieldAssign[Typ[_]](
+      obj: Typ[Expr[Typ]],
+      field: String,
+      expr: Typ[Expr[Typ]],
+  ) extends Statement[Typ]
 
   case ExprStatement[Typ[_]](expr: Typ[Expr[Typ]]) extends Statement[Typ]
 
@@ -53,6 +58,7 @@ enum Type:
   case String
   case Typename(name: String)
   case Nullable(typ: Type)
+  case Null
 
 enum Expr[Typ[_]]:
   case NullLiteral[Typ[_]]() extends Expr[Typ]
@@ -69,12 +75,8 @@ enum Expr[Typ[_]]:
 
   case FuncCallExpr[Typ[_]](func: Typ[Expr[Typ]], args: List[Typ[Expr[Typ]]])
       extends Expr[Typ]
-  case MethodCallExpr[Typ[_]](
-      obj: Typ[Expr[Typ]],
-      method: String,
-      args: List[Typ[Expr[Typ]]],
-  ) extends Expr[Typ]
-  case ObjAccessExpr[Typ[_]](obj: Typ[Expr[Typ]], field: String) extends Expr[Typ]
+  case ObjAccessExpr[Typ[_]](obj: Typ[Expr[Typ]], field: String)
+      extends Expr[Typ]
 
 enum Binop:
   case Plus
