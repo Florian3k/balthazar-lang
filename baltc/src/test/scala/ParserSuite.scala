@@ -45,7 +45,7 @@ class ParserSuite extends munit.FunSuite:
                     Int64Literal(66),
                   ),
                   ifTrue = List(
-                    ExprStatement(MethodCallExpr(VariableExpr("obj"), "method", List(NullLiteral))),
+                    ExprStatement(MethodCallExpr(VariableExpr("obj"), "method", List(NullLiteral()))),
                     ContinueStatement(),
                   ),
                   ifFalse = List(),
