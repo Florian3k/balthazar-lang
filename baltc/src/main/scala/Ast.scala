@@ -24,27 +24,27 @@ enum Statement[Typ[_]]:
       extends Statement[Typ]
 
   case IfStatement[Typ[_]](
-      cond: Expr[Typ],
+      cond: Typ[Expr[Typ]],
       ifTrue: List[Statement[Typ]],
       ifFalse: List[Statement[Typ]],
   ) extends Statement[Typ]
-  case WhileStatement[Typ[_]](cond: Expr[Typ], body: List[Statement[Typ]])
+  case WhileStatement[Typ[_]](cond: Typ[Expr[Typ]], body: List[Statement[Typ]])
       extends Statement[Typ]
   case ForStatement[Typ[_]](
       init: Option[Statement.ForInitStatement[Typ]],
-      cond: Option[Expr[Typ]],
+      cond: Option[Typ[Expr[Typ]]],
       inc: Option[Statement.ExprOrAssign[Typ]],
       body: List[Statement[Typ]],
   ) extends Statement[Typ]
   case BreakStatement[Typ[_]]() extends Statement[Typ]
   case ContinueStatement[Typ[_]]() extends Statement[Typ]
-  case ReturnStatement[Typ[_]](expr: Option[Expr[Typ]]) extends Statement[Typ]
+  case ReturnStatement[Typ[_]](expr: Option[Typ[Expr[Typ]]]) extends Statement[Typ]
 
-  case VarAssign[Typ[_]](name: String, expr: Expr[Typ]) extends Statement[Typ]
-  case FieldAssign[Typ[_]](obj: Expr[Typ], field: String, expr: Expr[Typ])
+  case VarAssign[Typ[_]](name: String, expr: Typ[Expr[Typ]]) extends Statement[Typ]
+  case FieldAssign[Typ[_]](obj: Typ[Expr[Typ]], field: String, expr: Typ[Expr[Typ]])
       extends Statement[Typ]
 
-  case ExprStatement[Typ[_]](expr: Expr[Typ]) extends Statement[Typ]
+  case ExprStatement[Typ[_]](expr: Typ[Expr[Typ]]) extends Statement[Typ]
 
 enum Type:
   case Bool
@@ -63,18 +63,18 @@ enum Expr[Typ[_]]:
 
   case VariableExpr[Typ[_]](value: String) extends Expr[Typ]
 
-  case UnaryExpr[Typ[_]](op: Unop, rhs: Expr[Typ]) extends Expr[Typ]
-  case BinaryExpr[Typ[_]](lhs: Expr[Typ], op: Binop, rhs: Expr[Typ])
+  case UnaryExpr[Typ[_]](op: Unop, rhs: Typ[Expr[Typ]]) extends Expr[Typ]
+  case BinaryExpr[Typ[_]](lhs: Typ[Expr[Typ]], op: Binop, rhs: Typ[Expr[Typ]])
       extends Expr[Typ]
 
-  case FuncCallExpr[Typ[_]](func: Expr[Typ], args: List[Expr[Typ]])
+  case FuncCallExpr[Typ[_]](func: Typ[Expr[Typ]], args: List[Typ[Expr[Typ]]])
       extends Expr[Typ]
   case MethodCallExpr[Typ[_]](
-      obj: Expr[Typ],
+      obj: Typ[Expr[Typ]],
       method: String,
-      args: List[Expr[Typ]],
+      args: List[Typ[Expr[Typ]]],
   ) extends Expr[Typ]
-  case ObjAccessExpr[Typ[_]](obj: Expr[Typ], field: String) extends Expr[Typ]
+  case ObjAccessExpr[Typ[_]](obj: Typ[Expr[Typ]], field: String) extends Expr[Typ]
 
 enum Binop:
   case Plus
