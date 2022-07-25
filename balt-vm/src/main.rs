@@ -97,6 +97,7 @@ impl VM {
                     let v = self.chunk.constants[const_index as usize];
                     self.push_val(v);
                 }
+                OpNull => self.push_val(Value { uint: 0 }),
                 OpAddI64 => arith_arm!(self, int, +),
                 OpSubI64 => arith_arm!(self, int, -),
                 OpMulI64 => arith_arm!(self, int, *),
@@ -106,6 +107,11 @@ impl VM {
                 OpLtI64 => cmp_arm!(self, int, <),
                 OpGeqI64 => cmp_arm!(self, int, >=),
                 OpGtI64 => cmp_arm!(self, int, >),
+
+                OpNegI64 => {
+                    let rhs = self.pop_val().as_int();
+                    self.push_val(Value { int: -rhs })
+                },
 
                 OpAddF64 => arith_arm!(self, float, +),
                 OpSubF64 => arith_arm!(self, float, -),
@@ -152,9 +158,15 @@ impl VM {
 }
 
 fn main() -> io::Result<()> {
-    let s = read_to_string("test.json").unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 2 {
+        println!("Expected 1 argument");
+        return Ok(());
+    }
+
+    let s = read_to_string(args[1].to_string()).unwrap();
     let (c, sv) = Chunk::from_str(&s).unwrap();
-    dbg!(&c);
+    // dbg!(&c);
     let mut vm = VM::new(c, sv);
     vm.run().unwrap();
     unsafe { gc::free_all_objs() };

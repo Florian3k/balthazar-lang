@@ -4,9 +4,9 @@ import opcode._
 import scala.collection.mutable.ArrayBuffer
 
 class Codegen:
-  val consts = ArrayBuffer[Long]()
+  val consts = ArrayBuffer[Long | String]()
 
-  def getOrCreateConstant(v: Long): Int =
+  def getOrCreateConstant(v: Long | String): Int =
     if !consts.contains(v) then consts.addOne(v)
     consts.indexOf(v)
 
@@ -20,7 +20,9 @@ class Codegen:
         val idx = getOrCreateConstant(n)
         List(Opcode.OpConst, Operand.U16(idx))
       case Float64Literal(f)  => ???
-      case StringLiteral(s)   => ???
+      case StringLiteral(s)   =>
+        val idx = getOrCreateConstant(s)
+        List(Opcode.OpConst, Operand.U16(idx))
       case VariableExpr(name) => ???
       case UnaryExpr(op, expr) =>
         codegenExpr(expr) ++ List(
