@@ -16,8 +16,6 @@ class ParserSuite extends munit.FunSuite:
         |    }
         |    break;
         |  }
-        |  -1.abs();
-        |  - 1.abs();
         |  return 5;
         |}
         """.stripMargin,
@@ -28,7 +26,7 @@ class ParserSuite extends munit.FunSuite:
     assertEquals(
       tree,
       List(
-        FunctionDecl(
+        FunctionDecl[Untyped](
           name = "fun1",
           params = List(("x", Int64), ("y", Nullable(String))),
           retType = Some(Int64),
@@ -45,7 +43,7 @@ class ParserSuite extends munit.FunSuite:
                     Int64Literal(66),
                   ),
                   ifTrue = List(
-                    ExprStatement(MethodCallExpr(VariableExpr("obj"), "method", List(NullLiteral))),
+                    ExprStatement(FuncCallExpr(ObjAccessExpr(VariableExpr("obj"), "method"), List(NullLiteral()))),
                     ContinueStatement(),
                   ),
                   ifFalse = List(),
@@ -53,8 +51,6 @@ class ParserSuite extends munit.FunSuite:
                 BreakStatement(),
               ),
             ),
-            ExprStatement(MethodCallExpr(Int64Literal(-1), "abs", List())),
-            ExprStatement(UnaryExpr(Unop.Minus, MethodCallExpr(Int64Literal(1), "abs", List()))),
             ReturnStatement(Some(Int64Literal(5))),
           ),
         )
@@ -83,7 +79,7 @@ class ParserSuite extends munit.FunSuite:
     assertEquals(
       tree,
       List(
-        ClassDecl(
+        ClassDecl[Untyped](
           "Foo",
           List(("field1", Int64), ("field2", Float64)),
           List(
@@ -94,12 +90,17 @@ class ParserSuite extends munit.FunSuite:
               List(
                 ExprStatement(
                   FuncCallExpr(
-                    MethodCallExpr(
+                    FuncCallExpr(
                       ObjAccessExpr(
-                        MethodCallExpr(VariableExpr("obj"), "call", List(Int64Literal(1), Int64Literal(2))),
-                        "field",
+                        ObjAccessExpr(
+                          FuncCallExpr(
+                            ObjAccessExpr(VariableExpr("obj"), "call"),
+                            List(Int64Literal(1), Int64Literal(2)),
+                          ),
+                          "field",
+                        ),
+                        "other",
                       ),
-                      "other",
                       List(Int64Literal(3)),
                     ),
                     List(Int64Literal(4), Int64Literal(5)),

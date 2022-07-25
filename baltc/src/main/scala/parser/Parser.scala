@@ -33,12 +33,12 @@ class Parser(var input: List[Token]):
 
   private def peekType: TokenType = peek().typ
 
-  def parseProgram(): List[Statement] =
-    val stmts = ListBuffer[Statement]()
+  def parseProgram(): List[Statement[Untyped]] =
+    val stmts = ListBuffer[Statement[Untyped]]()
     while input.nonEmpty do stmts.addOne(parseStatement())
     stmts.toList
 
-  def parseStatement(): Statement =
+  def parseStatement(): Statement[Untyped] =
     peekType match
       case ClassKeyword    => parseClassDecl()
       case DefKeyword      => parseFunctionDecl()
@@ -51,7 +51,7 @@ class Parser(var input: List[Token]):
       case ReturnKeyword   => parseReturnStatement()
       case _               => parseExprOrAssign()
 
-  def parseClassDecl(): ClassDecl =
+  def parseClassDecl(): ClassDecl[Untyped] =
     consumeToken(ClassKeyword)
     val className = consumeIdentifier()
     consumeToken(LeftBrace)
@@ -65,13 +65,13 @@ class Parser(var input: List[Token]):
       consumeToken(Semicolon)
       fields.addOne((name, typ))
 
-    val methods = ListBuffer[FunctionDecl]()
+    val methods = ListBuffer[FunctionDecl[Untyped]]()
     while peekType == DefKeyword do methods.addOne(parseFunctionDecl())
 
     consumeToken(RightBrace)
     ClassDecl(className, fields.toList, methods.toList)
 
-  def parseFunctionDecl(): FunctionDecl =
+  def parseFunctionDecl(): FunctionDecl[Untyped] =
     consumeToken(DefKeyword)
     val fnName = consumeIdentifier()
 
@@ -95,7 +95,7 @@ class Parser(var input: List[Token]):
 
     FunctionDecl(fnName, params.toList, retType, body)
 
-  def parseVarDecl(): VarDecl =
+  def parseVarDecl(): VarDecl[Untyped] =
     consumeToken(VarKeyword)
     val varName = consumeIdentifier()
 
@@ -111,7 +111,7 @@ class Parser(var input: List[Token]):
 
     VarDecl(varName, typ, expr)
 
-  def parseIfStatement(): IfStatement =
+  def parseIfStatement(): IfStatement[Untyped] =
     consumeToken(IfKeyword)
     consumeToken(LeftParen)
     var cond = parseExpr()
@@ -127,14 +127,14 @@ class Parser(var input: List[Token]):
 
     IfStatement(cond, ifTrue, ifFalse)
 
-  def parseWhileStatement(): WhileStatement =
+  def parseWhileStatement(): WhileStatement[Untyped] =
     consumeToken(WhileKeyword)
     consumeToken(LeftParen)
     var cond = parseExpr()
     consumeToken(RightParen)
     WhileStatement(cond, parseBlock())
 
-  def parseForStatement(): ForStatement =
+  def parseForStatement(): ForStatement[Untyped] =
     consumeToken(ForKeyword)
     consumeToken(LeftParen)
 
@@ -154,17 +154,17 @@ class Parser(var input: List[Token]):
 
     ForStatement(init, cond, inc, parseBlock())
 
-  def parseBreakStatement(): Statement =
+  def parseBreakStatement(): Statement[Untyped] =
     consumeToken(BreakKeyword)
     consumeToken(Semicolon)
     BreakStatement()
 
-  def parseContinueStatement(): ContinueStatement =
+  def parseContinueStatement(): ContinueStatement[Untyped] =
     consumeToken(ContinueKeyword)
     consumeToken(Semicolon)
     ContinueStatement()
 
-  def parseReturnStatement(): ReturnStatement =
+  def parseReturnStatement(): ReturnStatement[Untyped] =
     consumeToken(ReturnKeyword)
     val expr = peekType match
       case Semicolon => None
@@ -172,14 +172,16 @@ class Parser(var input: List[Token]):
     consumeToken(Semicolon)
     ReturnStatement(expr)
 
-  def parseBlock(): List[Statement] =
+  def parseBlock(): List[Statement[Untyped]] =
     consumeToken(LeftBrace)
-    val stmts = ListBuffer[Statement]()
+    val stmts = ListBuffer[Statement[Untyped]]()
     while peekType != RightBrace do stmts.addOne(parseStatement())
     consumeToken(RightBrace)
     stmts.toList
 
-  def parseExprOrAssign(consumeSemicolon: Boolean = true): ExprOrAssign =
+  def parseExprOrAssign(
+      consumeSemicolon: Boolean = true
+  ): ExprOrAssign[Untyped] =
     parseExpr() match
       case VariableExpr(name) if peekType == Assign =>
         consumeToken(Assign)
@@ -242,7 +244,7 @@ class Parser(var input: List[Token]):
       case BoolOr       => Binop.BoolOr
       case _            => ???
 
-  def parseExpr(): Expr =
+  def parseExpr(): Expr[Untyped] =
     parseBinopExpr(
       List(
         Right(List(BoolOr)),
@@ -259,7 +261,7 @@ class Parser(var input: List[Token]):
 
   def parseBinopExpr(
       table: List[Either[List[TokenType], List[TokenType]]]
-  ): Expr =
+  ): Expr[Untyped] =
     table match
       case Left(tokens) :: rest =>
         var expr = parseBinopExpr(rest)
@@ -278,7 +280,7 @@ class Parser(var input: List[Token]):
       case Nil =>
         parseUnaryExpr()
 
-  def parseUnaryExpr(): Expr =
+  def parseUnaryExpr(): Expr[Untyped] =
     peekType match
       case Minus =>
         consumeToken(Minus)
@@ -289,10 +291,10 @@ class Parser(var input: List[Token]):
       case _ =>
         parseCallAndAccessExpr()
 
-  def parseCallAndAccessExpr(): Expr =
-    def parseCallArgs(): List[Expr] =
+  def parseCallAndAccessExpr(): Expr[Untyped] =
+    def parseCallArgs(): List[Expr[Untyped]] =
       consumeToken(LeftParen)
-      val args = ListBuffer[Expr]()
+      val args = ListBuffer[Expr[Untyped]]()
       while peekType != RightParen do
         args.addOne(parseExpr())
         if peekType != RightParen then consumeToken(Comma)
@@ -308,19 +310,16 @@ class Parser(var input: List[Token]):
           case Period =>
             consumeToken(Period)
             val field = consumeIdentifier()
-            expr =
-              if peekType == LeftParen then
-                MethodCallExpr(expr, field, parseCallArgs())
-              else ObjAccessExpr(expr, field)
+            expr = ObjAccessExpr(expr, field)
           case t =>
             break
     }
     expr
 
-  def parseBasicExpr(): Expr =
+  def parseBasicExpr(): Expr[Untyped] =
     val token = consumeToken()
     token.typ match
-      case NullKeyword  => NullLiteral
+      case NullKeyword  => NullLiteral()
       case TrueKeyword  => BoolLiteral(true)
       case FalseKeyword => BoolLiteral(false)
       case IntLiteral =>

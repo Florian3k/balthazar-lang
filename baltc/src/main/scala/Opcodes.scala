@@ -3,9 +3,17 @@
  * DO NOT EDIT MANUALLY
  */
 
+package opcode
+
+enum Operand:
+  case U8(val value: Short)
+  case U16(val value: Int)
+  case S16(val value: Short)
+
 enum Opcode:
   case OpRet
   case OpConst
+  case OpNull
   case OpAddI64
   case OpSubI64
   case OpMulI64
@@ -14,6 +22,7 @@ enum Opcode:
   case OpLtI64
   case OpGeqI64
   case OpGtI64
+  case OpNegI64
   case OpAddF64
   case OpSubF64
   case OpMulF64

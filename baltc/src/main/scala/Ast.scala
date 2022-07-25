@@ -1,43 +1,55 @@
 package ast
 
-object Statement:
-  type ForInitStatement = VarDecl | ExprOrAssign
-  type ExprOrAssign = ExprStatement | VarAssign | FieldAssign
+type Untyped = [X] =>> X
+case class Typed[E](typ: Type, node: E)
 
-enum Statement:
-  case ClassDecl(
+object Statement:
+  type ForInitStatement[Typ[_]] = VarDecl[Typ] | ExprOrAssign[Typ]
+  type ExprOrAssign[Typ[_]] =
+    ExprStatement[Typ] | VarAssign[Typ] | FieldAssign[Typ]
+
+enum Statement[Typ[_]]:
+  case ClassDecl[Typ[_]](
       name: String,
       fields: List[(String, Type)],
-      methods: List[FunctionDecl],
-  )
-  case FunctionDecl(
+      methods: List[FunctionDecl[Typ]],
+  ) extends Statement[Typ]
+  case FunctionDecl[Typ[_]](
       name: String,
       params: List[(String, Type)],
       retType: Option[Type],
-      body: List[Statement],
-  )
-  case VarDecl(name: String, typ: Option[Type], expr: Expr)
+      body: List[Statement[Typ]],
+  ) extends Statement[Typ]
+  case VarDecl[Typ[_]](name: String, typ: Option[Type], expr: Typ[Expr[Typ]])
+      extends Statement[Typ]
 
-  case IfStatement(
-      cond: Expr,
-      ifTrue: List[Statement],
-      ifFalse: List[Statement],
-  )
-  case WhileStatement(cond: Expr, body: List[Statement])
-  case ForStatement(
-      init: Option[Statement.ForInitStatement],
-      cond: Option[Expr],
-      inc: Option[Statement.ExprOrAssign],
-      body: List[Statement],
-  )
-  case BreakStatement()
-  case ContinueStatement()
-  case ReturnStatement(expr: Option[Expr])
+  case IfStatement[Typ[_]](
+      cond: Typ[Expr[Typ]],
+      ifTrue: List[Statement[Typ]],
+      ifFalse: List[Statement[Typ]],
+  ) extends Statement[Typ]
+  case WhileStatement[Typ[_]](cond: Typ[Expr[Typ]], body: List[Statement[Typ]])
+      extends Statement[Typ]
+  case ForStatement[Typ[_]](
+      init: Option[Statement.ForInitStatement[Typ]],
+      cond: Option[Typ[Expr[Typ]]],
+      inc: Option[Statement.ExprOrAssign[Typ]],
+      body: List[Statement[Typ]],
+  ) extends Statement[Typ]
+  case BreakStatement[Typ[_]]() extends Statement[Typ]
+  case ContinueStatement[Typ[_]]() extends Statement[Typ]
+  case ReturnStatement[Typ[_]](expr: Option[Typ[Expr[Typ]]])
+      extends Statement[Typ]
 
-  case VarAssign(name: String, expr: Expr)
-  case FieldAssign(obj: Expr, field: String, expr: Expr)
+  case VarAssign[Typ[_]](name: String, expr: Typ[Expr[Typ]])
+      extends Statement[Typ]
+  case FieldAssign[Typ[_]](
+      obj: Typ[Expr[Typ]],
+      field: String,
+      expr: Typ[Expr[Typ]],
+  ) extends Statement[Typ]
 
-  case ExprStatement(expr: Expr)
+  case ExprStatement[Typ[_]](expr: Typ[Expr[Typ]]) extends Statement[Typ]
 
 enum Type:
   case Bool
@@ -46,22 +58,25 @@ enum Type:
   case String
   case Typename(name: String)
   case Nullable(typ: Type)
+  case Null
 
-enum Expr:
-  case NullLiteral
-  case BoolLiteral(value: Boolean)
-  case Int64Literal(value: Long)
-  case Float64Literal(value: Double)
-  case StringLiteral(value: String)
+enum Expr[Typ[_]]:
+  case NullLiteral[Typ[_]]() extends Expr[Typ]
+  case BoolLiteral[Typ[_]](value: Boolean) extends Expr[Typ]
+  case Int64Literal[Typ[_]](value: Long) extends Expr[Typ]
+  case Float64Literal[Typ[_]](value: Double) extends Expr[Typ]
+  case StringLiteral[Typ[_]](value: String) extends Expr[Typ]
 
-  case VariableExpr(value: String)
+  case VariableExpr[Typ[_]](value: String) extends Expr[Typ]
 
-  case UnaryExpr(op: Unop, rhs: Expr)
-  case BinaryExpr(lhs: Expr, op: Binop, rhs: Expr)
+  case UnaryExpr[Typ[_]](op: Unop, rhs: Typ[Expr[Typ]]) extends Expr[Typ]
+  case BinaryExpr[Typ[_]](lhs: Typ[Expr[Typ]], op: Binop, rhs: Typ[Expr[Typ]])
+      extends Expr[Typ]
 
-  case FuncCallExpr(func: Expr, args: List[Expr])
-  case MethodCallExpr(obj: Expr, method: String, args: List[Expr])
-  case ObjAccessExpr(obj: Expr, field: String)
+  case FuncCallExpr[Typ[_]](func: Typ[Expr[Typ]], args: List[Typ[Expr[Typ]]])
+      extends Expr[Typ]
+  case ObjAccessExpr[Typ[_]](obj: Typ[Expr[Typ]], field: String)
+      extends Expr[Typ]
 
 enum Binop:
   case Plus
