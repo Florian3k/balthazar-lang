@@ -14,9 +14,12 @@ Currently in early stages of development.
 ### Progress
 - Compiler
   - lexer/parser - DONE - error reporting to be improved
-  - typechecker - 0%
-  - bytecode generation - 0%
+  - typechecker
+    - can typecheck constants, unary and binary operations
+  - bytecode generation
+    - can generate basic arithmetic/string operations
 - VM
+  - can execute basic arithmetic/string operations and printing
   - TODO <!-- fill out main areas of VM -->
 
 ### Language overview
