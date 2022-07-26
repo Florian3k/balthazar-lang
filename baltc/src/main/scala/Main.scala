@@ -13,24 +13,22 @@ import typer.Typer
   val typed = Typer.typecheckProgram(program)
 
   val mainFn = typed
-    .collect { case mainFn @ FunctionDecl("main", _, _, _) =>
-      mainFn
-    }
+    .collect { case mainFn @ FunctionDecl("main", _, _, _) => mainFn }
     .headOption
     .getOrElse(throw Exception("Main function missing"))
 
   val codegen = Codegen()
-  val bytecode = mainFn.body collect { case ExprStatement(expr) =>
-    expr
-  } flatMap { expr =>
-    codegen
-      .codegenExpr(expr)
-      .appended(
-        if expr.typ == Type.String
-        then Opcode.OpPrintStr
-        else Opcode.OpPrint
-      )
-  }
+  val bytecode = mainFn.body
+    .collect { case ExprStatement(expr) => expr }
+    .flatMap { expr =>
+      codegen
+        .codegenExpr(expr)
+        .appended(
+          if expr.typ == Type.String
+          then Opcode.OpPrintStr
+          else Opcode.OpPrint
+        )
+    }
 
   val json = ujson.Obj(
     "code" -> bytecode.appended(Opcode.OpRet).flatMap {
