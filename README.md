@@ -15,11 +15,15 @@ Currently in early stages of development.
 - Compiler
   - lexer/parser - DONE - error reporting to be improved
   - typechecker
-    - can typecheck constants, unary and binary operations
+    - constants, unary and binary operations
+    - `if`s
   - bytecode generation
-    - can generate basic arithmetic/string operations
+    - basic arithmetic/string operations
+    - `if`s/jumps
+
 - VM
-  - can execute basic arithmetic/string operations and printing
+  - basic arithmetic/string operations and printing
+  - jumps
   - TODO <!-- fill out main areas of VM -->
 
 ### Language overview
