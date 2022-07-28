@@ -14,18 +14,12 @@ class Codegen:
   class LoopContext():
     val breaks = ListBuffer[Operand.S16]()
     val continues = ListBuffer[Operand.S16]()
-    var idx = 0
-    def nextIdx(): Int =
-      idx += 1
-      idx
     def newBreak(): Operand.S16 =
-      val op: Operand.S16 = Operand.S16(nextIdx())
-      breaks.addOne(op)
-      op
+      breaks.addOne(Operand.S16(0))
+      breaks.last
     def newContinue(): Operand.S16 =
-      val op: Operand.S16 = Operand.S16(nextIdx())
-      continues.addOne(op)
-      op
+      continues.addOne(Operand.S16(0))
+      continues.last
   end LoopContext
 
   def bytecodeSize(code: List[Op]): Int =
