@@ -76,6 +76,15 @@ impl VM {
         res
     }
 
+    /// Consumes litle-endian i16 from under `ip`
+    /// TODO check for binary correctness
+    fn read_i16(&mut self) -> i16 {
+        let res: i16 =
+            ((self.chunk.code[self.ip + 1] as i16) << 8) | self.chunk.code[self.ip] as i16;
+        self.ip += 2;
+        res
+    }
+
     /// Allocates or returns already allocated `Obj` containing given String
     /// All `ObjString`s should be allocated using this function
     fn allocate_string(&mut self, s: String) -> Value {
@@ -84,6 +93,10 @@ impl VM {
             .entry(s.clone())
             .or_insert_with(|| allocate_obj(ObjInner::String(s.into())));
         *obj
+    }
+
+    fn jump(&mut self, offset: i16) {
+        self.ip = ((self.ip as i64) + (offset as i64)) as usize;
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
@@ -97,6 +110,7 @@ impl VM {
                     let v = self.chunk.constants[const_index as usize];
                     self.push_val(v);
                 }
+                OpNull => self.push_val(Value { uint: 0 }),
                 OpAddI64 => arith_arm!(self, int, +),
                 OpSubI64 => arith_arm!(self, int, -),
                 OpMulI64 => arith_arm!(self, int, *),
@@ -107,6 +121,11 @@ impl VM {
                 OpGeqI64 => cmp_arm!(self, int, >=),
                 OpGtI64 => cmp_arm!(self, int, >),
 
+                OpNegI64 => {
+                    let rhs = self.pop_val().as_int();
+                    self.push_val(Value { int: -rhs })
+                }
+
                 OpAddF64 => arith_arm!(self, float, +),
                 OpSubF64 => arith_arm!(self, float, -),
                 OpMulF64 => arith_arm!(self, float, *),
@@ -116,6 +135,23 @@ impl VM {
                 OpLtF64 => cmp_arm!(self, float, <),
                 OpGeqF64 => cmp_arm!(self, float, >=),
                 OpGtF64 => cmp_arm!(self, float, >),
+
+                OpJump => {
+                    let offset = self.read_i16();
+                    self.jump(offset);
+                }
+                OpJumpTrue => {
+                    let offset = self.read_i16();
+                    if self.pop_val().as_uint() != 0 {
+                        self.jump(offset);
+                    }
+                }
+                OpJumpFalse => {
+                    let offset = self.read_i16();
+                    if self.pop_val().as_uint() == 0 {
+                        self.jump(offset);
+                    }
+                }
 
                 OpEq => {
                     let rhs = self.pop_val().as_uint();
@@ -152,9 +188,15 @@ impl VM {
 }
 
 fn main() -> io::Result<()> {
-    let s = read_to_string("test.json").unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 2 {
+        println!("Expected 1 argument");
+        return Ok(());
+    }
+
+    let s = read_to_string(args[1].to_string()).unwrap();
     let (c, sv) = Chunk::from_str(&s).unwrap();
-    dbg!(&c);
+    // dbg!(&c);
     let mut vm = VM::new(c, sv);
     vm.run().unwrap();
     unsafe { gc::free_all_objs() };

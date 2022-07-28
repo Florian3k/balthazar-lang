@@ -31,6 +31,9 @@ enum Opcode:
   case OpLtF64
   case OpGeqF64
   case OpGtF64
+  case OpJump
+  case OpJumpTrue
+  case OpJumpFalse
   case OpPrint
   case OpConcat
   case OpPrintStr

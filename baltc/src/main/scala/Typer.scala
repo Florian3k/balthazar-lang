@@ -174,6 +174,8 @@ object Typer:
             Typed(Int64, BinaryExpr(tLhs, op, tRhs))
           case (tp @ (Int64 | Float64), op @ (Plus | Minus | Times | Div)) =>
             Typed(tp, BinaryExpr(tLhs, op, tRhs))
+          case (String, Plus) =>
+            Typed(String, BinaryExpr(tLhs, Plus, tRhs))
           case (Bool, op @ (BoolAnd | BoolOr)) =>
             Typed(Bool, BinaryExpr(tLhs, op, tRhs))
           case (tp, op) =>

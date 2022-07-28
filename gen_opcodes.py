@@ -16,6 +16,7 @@ opcodes: list[str] = [
   "OpConst",
   "OpNull",
 
+  # int64 instructions
   "OpAddI64",
   "OpSubI64",
   "OpMulI64",
@@ -28,6 +29,7 @@ opcodes: list[str] = [
 
   "OpNegI64",
 
+  # float64 instructions
   "OpAddF64",
   "OpSubF64",
   "OpMulF64",
@@ -38,6 +40,12 @@ opcodes: list[str] = [
   "OpGeqF64",
   "OpGtF64",
 
+  # jumps
+  "OpJump",
+  "OpJumpTrue",
+  "OpJumpFalse",
+
+  # other
   "OpPrint",
 
   "OpConcat",

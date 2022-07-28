@@ -1,0 +1,9 @@
+def main() {
+  if (1 + 2 > 3) {
+    "true branch";
+  } else {
+    "false branch";
+  }
+  "after if";
+}
+

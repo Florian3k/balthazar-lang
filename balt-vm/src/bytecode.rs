@@ -29,10 +29,13 @@ pub enum Op {
     OpLtF64 = 17,
     OpGeqF64 = 18,
     OpGtF64 = 19,
-    OpPrint = 20,
-    OpConcat = 21,
-    OpPrintStr = 22,
-    OpEq = 23,
+    OpJump = 20,
+    OpJumpTrue = 21,
+    OpJumpFalse = 22,
+    OpPrint = 23,
+    OpConcat = 24,
+    OpPrintStr = 25,
+    OpEq = 26,
 }
 use Op::*;
 
@@ -61,10 +64,13 @@ impl TryFrom<u8> for Op {
             17 => OpLtF64,
             18 => OpGeqF64,
             19 => OpGtF64,
-            20 => OpPrint,
-            21 => OpConcat,
-            22 => OpPrintStr,
-            23 => OpEq,
+            20 => OpJump,
+            21 => OpJumpTrue,
+            22 => OpJumpFalse,
+            23 => OpPrint,
+            24 => OpConcat,
+            25 => OpPrintStr,
+            26 => OpEq,
             x => return Err(format!("Unknown opcode: {}", x).into()),
         })
     }
