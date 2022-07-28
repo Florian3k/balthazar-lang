@@ -18,17 +18,7 @@ import typer.Typer
     .getOrElse(throw Exception("Main function missing"))
 
   val codegen = Codegen()
-  val bytecode = mainFn.body
-    .collect { case ExprStatement(expr) => expr }
-    .flatMap { expr =>
-      codegen
-        .codegenExpr(expr)
-        .appended(
-          if expr.typ == Type.String
-          then Opcode.OpPrintStr
-          else Opcode.OpPrint
-        )
-    }
+  val bytecode = codegen.codegenStmt(mainFn)
 
   val json = ujson.Obj(
     "code" -> bytecode.appended(Opcode.OpRet).flatMap {
