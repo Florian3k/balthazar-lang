@@ -40,6 +40,7 @@ object Typer:
     def withoutNotNull(name: String) = copy(notNull = notNull - name)
     def withVar(name: String, typ: Type) = copy(vars = (name, typ) :: vars)
     def withRetType(rt: Option[Type]) = copy(fnRetType = rt)
+    def withLoop = copy(isLoop = true)
   object Context:
     def empty: Context = Context(List(), List(), List(), None, false, Set())
   def ctx(using ctx: Context): Context = ctx
@@ -53,7 +54,7 @@ object Typer:
         case FunctionDecl(_, _, _, _) => ()
         case _ =>
           throw Exception(
-            s"${prettyName(stmt).toUpperCase} is not allowed in global scope"
+            s"${prettyName(stmt).capitalize} is not allowed in global scope"
           )
 
     val classes = program.collect { case cd @ ClassDecl(_, _, _) => cd }
@@ -107,7 +108,11 @@ object Typer:
     val tIfFalse = typecheckBlock(ifFalse)
     IfStatement(tCond, tIfTrue, tIfFalse)
 
-  def typecheck(ws: WhileStatement[Untyped])(using Context): WhileStatement[Typed] = ???
+  def typecheck(ws: WhileStatement[Untyped])(using Context): WhileStatement[Typed] =
+    val WhileStatement(cond, body) = ws
+    val tCond = typecheckExpr(cond)
+    if tCond.typ != Type.Bool then throw Exception("while condition must be Bool")
+    WhileStatement(tCond, typecheckBlock(body)(using ctx.withLoop))
 
   def typecheck(fs: ForStatement[Untyped])(using Context): ForStatement[Typed] = ???
 

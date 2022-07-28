@@ -77,12 +77,8 @@ impl VM {
     }
 
     /// Consumes litle-endian i16 from under `ip`
-    /// TODO check for binary correctness
     fn read_i16(&mut self) -> i16 {
-        let res: i16 =
-            ((self.chunk.code[self.ip + 1] as i16) << 8) | self.chunk.code[self.ip] as i16;
-        self.ip += 2;
-        res
+        self.read_u16() as i16
     }
 
     /// Allocates or returns already allocated `Obj` containing given String

@@ -2,22 +2,39 @@ import ast._
 import ast.Expr._
 import ast.Statement._
 import opcode._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, Stack, ListBuffer}
+
+private val jumpSize = 3;
 
 class Codegen:
   type Op = Opcode | Operand
   val consts = ArrayBuffer[Long | String]()
+  val loops = Stack[LoopContext]()
 
-  def bytecodeSize(code: List[Op]): Short =
-    code
-      .map {
-        case Operand.U8(_)  => 1
-        case Operand.U16(_) => 2
-        case Operand.S16(_) => 2
-        case _: Opcode      => 1
-      }
-      .sum
-      .toShort
+  class LoopContext():
+    val breaks = ListBuffer[Operand.S16]()
+    val continues = ListBuffer[Operand.S16]()
+    var idx = 0
+    def nextIdx(): Int =
+      idx += 1
+      idx
+    def newBreak(): Operand.S16 =
+      val op: Operand.S16 = Operand.S16(nextIdx())
+      breaks.addOne(op)
+      op
+    def newContinue(): Operand.S16 =
+      val op: Operand.S16 = Operand.S16(nextIdx())
+      continues.addOne(op)
+      op
+  end LoopContext
+
+  def bytecodeSize(code: List[Op]): Int =
+    code.map {
+      case Operand.U8(_)  => 1
+      case Operand.U16(_) => 2
+      case Operand.S16(_) => 2
+      case _: Opcode      => 1
+    }.sum
 
   def getOrCreateConstant(v: Long | String): Int =
     if !consts.contains(v) then consts.addOne(v)
@@ -25,9 +42,12 @@ class Codegen:
 
   def codegenStmt(stmt: Statement[Typed]): List[Op] =
     stmt match
-      case fd: FunctionDecl[Typed]  => codegenStmt(fd)
-      case is: IfStatement[Typed]   => codegenStmt(is)
-      case es: ExprStatement[Typed] => codegenStmt(es)
+      case fd: FunctionDecl[Typed]      => codegenStmt(fd)
+      case is: IfStatement[Typed]       => codegenStmt(is)
+      case ws: WhileStatement[Typed]    => codegenStmt(ws)
+      case bs: BreakStatement[Typed]    => codegenStmt(bs)
+      case cs: ContinueStatement[Typed] => codegenStmt(cs)
+      case es: ExprStatement[Typed]     => codegenStmt(es)
       case _ =>
         throw Exception(s"Codegen for ${stmt.getClass} is not supported")
 
@@ -54,14 +74,62 @@ class Codegen:
     val codeIfTrue = ifTrue.flatMap(codegenStmt)
     val codeIfFalse = ifFalse.flatMap(codegenStmt)
 
-    val secondJump =
-      List[Op](Opcode.OpJump, Operand.S16(bytecodeSize(codeIfFalse)))
     val firstJump = List[Op](
       Opcode.OpJumpFalse,
-      Operand.S16(bytecodeSize(codeIfTrue ++ secondJump)),
+      Operand.S16(bytecodeSize(codeIfTrue) + jumpSize),
+    )
+    val secondJump = List[Op](
+      Opcode.OpJump,
+      Operand.S16(bytecodeSize(codeIfFalse)),
     )
 
     codeCond ++ firstJump ++ codeIfTrue ++ secondJump ++ codeIfFalse
+
+  def codegenStmt(ws: WhileStatement[Typed]): List[Op] =
+    /*
+      [codeCond]    (2) <- continue
+       OpJumpFalse(1)
+       [codeBody]
+      OpJump(2)
+                    (1) <- break
+     */
+    val WhileStatement(cond, body) = ws
+
+    val codeCond = codegenExpr(cond)
+    loops.push(LoopContext())
+    val codeBody = body.flatMap(codegenStmt)
+    val loopCtx = loops.pop()
+
+    val condSize = bytecodeSize(codeCond)
+    val bodySize = bytecodeSize(codeBody)
+
+    loopCtx.breaks.foreach { operand =>
+      operand.value =
+        bytecodeSize(codeBody.dropWhile(_ ne operand).tail) + jumpSize
+    }
+    loopCtx.continues.foreach { operand =>
+      operand.value = -bytecodeSize(codeBody.takeWhile(_ ne operand))
+        - bytecodeSize(List(operand))
+        - jumpSize
+        - condSize
+    }
+
+    val firstJump = List[Op](
+      Opcode.OpJumpFalse,
+      Operand.S16(bodySize + jumpSize),
+    )
+    val secondJump = List[Op](
+      Opcode.OpJump,
+      Operand.S16(-jumpSize - bodySize - jumpSize - condSize),
+    )
+
+    codeCond ++ firstJump ++ codeBody ++ secondJump
+
+  def codegenStmt(bs: BreakStatement[Typed]): List[Op] =
+    List(Opcode.OpJump, loops.top.newBreak())
+
+  def codegenStmt(cs: ContinueStatement[Typed]): List[Op] =
+    List(Opcode.OpJump, loops.top.newContinue())
 
   def codegenStmt(es: ExprStatement[Typed]): List[Op] =
     codegenExpr(es.expr)

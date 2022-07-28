@@ -1,0 +1,8 @@
+def main() {
+  while (2 > 1) {
+    "loop start";
+    continue;
+    break;
+    "loop end";
+  }
+}
