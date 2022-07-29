@@ -22,10 +22,6 @@ class Codegen:
       .reverseIterator
       .indexWhere((name, _) => name == varName)
     assert(idx >= 0, "Codegen error: variable does not exist")
-
-    println(s"varName = $varName")
-    println(s"    idx = $idx")
-    println(s" scopes = ${scopes.map(_.vars).mkString(" $ ")}")
     idx + 1
 
   def enterScore() = scopes.push(ScopeContext())
