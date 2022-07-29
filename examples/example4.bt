@@ -1,0 +1,9 @@
+def main() {
+  var i = 3;
+  while (i < 7) {
+    var x = 10 - i;
+    x;
+    i = x + 1;
+    x = 1 + x;
+  }
+}

@@ -17,6 +17,9 @@ enum Opcode:
   case OpRet
   case OpConst
   case OpNull
+  case OpPop
+  case OpLoad
+  case OpStore
   case OpAddI64
   case OpSubI64
   case OpMulI64

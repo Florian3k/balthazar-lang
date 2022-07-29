@@ -23,6 +23,7 @@ private def prettyName(stmt: Statement[?]) =
 private def isSubtypeOf(sub: Type, sup: Type): Boolean =
   import Type._
   (sub, sup) match
+    case _ if sub == sup              => true
     case (Nullable(t1), Nullable(t2)) => isSubtypeOf(t1, t2)
     case (Null, Nullable(_))          => true
     case _                            => false
@@ -96,7 +97,7 @@ object Typer:
     val tExpr = typecheckExpr(expr)
     if typ != None && typ.get != tExpr.typ then
       throw Exception("Variable declaration type mismatch")
-    VarDecl(name, Some(tExpr.typ), tExpr)
+    VarDecl(name, typ.orElse(Some(tExpr.typ)), tExpr)
 
   def typecheck(is: IfStatement[Untyped])(using Context): IfStatement[Typed] =
     val IfStatement(cond, ifTrue, ifFalse) = is
@@ -126,7 +127,14 @@ object Typer:
 
   def typecheck(rs: ReturnStatement[Untyped])(using Context): ReturnStatement[Typed] = ???
 
-  def typecheck(va: VarAssign[Untyped])(using Context): VarAssign[Typed] = ???
+  def typecheck(va: VarAssign[Untyped])(using Context): VarAssign[Typed] =
+    val VarAssign(name, expr) = va
+    val (_, typ) = ctx.vars
+      .find { (n, typ) => n == name }
+      .getOrElse(throw Exception(s"Variable $name is not defined"))
+    val tExpr = typecheckExpr(expr)
+    if !isSubtypeOf(tExpr.typ, typ) then throw Exception("Variable assignment type mismatch")
+    VarAssign(name, tExpr)
 
   def typecheck(fa: FieldAssign[Untyped])(using Context): FieldAssign[Typed] = ???
 

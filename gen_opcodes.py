@@ -15,6 +15,9 @@ opcodes: list[str] = [
   "OpRet",
   "OpConst",
   "OpNull",
+  "OpPop",
+  "OpLoad",
+  "OpStore",
 
   # int64 instructions
   "OpAddI64",
