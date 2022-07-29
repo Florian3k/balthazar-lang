@@ -22,11 +22,11 @@ import typer.Typer
 
   val json = ujson.Obj(
     "code" -> bytecode.appended(Opcode.OpRet).flatMap {
-      case Operand.U8(u8) => List(ujson.Num(u8))
-      case Operand.U16(u16) =>
-        List(ujson.Num(u16 & 0xff), ujson.Num((u16 & 0xff_00) >> 8))
-      case Operand.S16(s16) =>
-        List(ujson.Num(s16 & 0xff), ujson.Num((16 & 0xff_00) >> 8))
+      case Operand.U8(i) => List(ujson.Num(i))
+      case Operand.U16(i) =>
+        List(ujson.Num(i & 0xff), ujson.Num((i & 0xff_00) >> 8))
+      case Operand.S16(i) =>
+        List(ujson.Num(i & 0xff), ujson.Num((i & 0xff_00) >> 8))
       case op: Opcode => List(ujson.Str(op.toString))
     },
     "constants" -> codegen.consts.map {

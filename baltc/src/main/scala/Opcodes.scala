@@ -5,15 +5,21 @@
 
 package opcode
 
+transparent trait Range(lower: Int, value: Int, upper: Int):
+  assert(lower <= value && value <= upper, "Operand range overflow!")
+
 enum Operand:
-  case U8(val value: Short)
-  case U16(val value: Int)
-  case S16(val value: Short)
+  case U8(var value: Int) extends Operand, Range(0, value, 255)
+  case U16(var value: Int) extends Operand, Range(0, value, (1 << 16) - 1)
+  case S16(var value: Int) extends Operand, Range(Short.MinValue, value, Short.MaxValue)
 
 enum Opcode:
   case OpRet
   case OpConst
   case OpNull
+  case OpPop
+  case OpLoad
+  case OpStore
   case OpAddI64
   case OpSubI64
   case OpMulI64

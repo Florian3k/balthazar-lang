@@ -68,6 +68,13 @@ impl VM {
         self.stack[self.sp]
     }
 
+    /// Consumes u8 from under `ip`
+    fn read_u8(&mut self) -> u8 {
+        let res: u8 = self.chunk.code[self.ip] as u8;
+        self.ip += 1;
+        res
+    }
+
     /// Consumes litle-endian u16 from under `ip`
     fn read_u16(&mut self) -> u16 {
         let res: u16 =
@@ -77,12 +84,8 @@ impl VM {
     }
 
     /// Consumes litle-endian i16 from under `ip`
-    /// TODO check for binary correctness
     fn read_i16(&mut self) -> i16 {
-        let res: i16 =
-            ((self.chunk.code[self.ip + 1] as i16) << 8) | self.chunk.code[self.ip] as i16;
-        self.ip += 2;
-        res
+        self.read_u16() as i16
     }
 
     /// Allocates or returns already allocated `Obj` containing given String
@@ -111,6 +114,20 @@ impl VM {
                     self.push_val(v);
                 }
                 OpNull => self.push_val(Value { uint: 0 }),
+
+                OpPop => {
+                    self.pop_val();
+                }
+                OpLoad => {
+                    let idx = self.read_u8();
+                    self.push_val(self.stack[self.sp - idx as usize]);
+                }
+                OpStore => {
+                    let idx = self.read_u8();
+                    let val = self.pop_val();
+                    self.stack[self.sp + 1 - idx as usize] = val;
+                }
+
                 OpAddI64 => arith_arm!(self, int, +),
                 OpSubI64 => arith_arm!(self, int, -),
                 OpMulI64 => arith_arm!(self, int, *),
