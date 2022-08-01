@@ -16,8 +16,7 @@ class Codegen:
     val vars = ArrayBuffer[(String, Type)]()
 
   def varIdx(varName: String): Int =
-    val idx = scopes
-      .reverse
+    val idx = scopes.reverse
       .flatMap(_.vars)
       .reverseIterator
       .indexWhere((name, _) => name == varName)
@@ -181,18 +180,15 @@ class Codegen:
       )
 
   def codegenExpr(expr: Typed[Expr[Typed]]): List[Op] =
+    def opConst(v: Long | String): List[Op] =
+      List(Opcode.OpConst, Operand.U16(getOrCreateConstant(v)))
+
     expr.node match
-      case NullLiteral() => List(Opcode.OpNull)
-      case BoolLiteral(b) =>
-        val idx = getOrCreateConstant(if b then 1 else 0)
-        List(Opcode.OpConst, Operand.U16(idx))
-      case Int64Literal(n) =>
-        val idx = getOrCreateConstant(n)
-        List(Opcode.OpConst, Operand.U16(idx))
-      case Float64Literal(f) => ???
-      case StringLiteral(s) =>
-        val idx = getOrCreateConstant(s)
-        List(Opcode.OpConst, Operand.U16(idx))
+      case NullLiteral()     => List(Opcode.OpNull)
+      case BoolLiteral(b)    => opConst(if b then 1 else 0)
+      case Int64Literal(n)   => opConst(n)
+      case Float64Literal(f) => opConst(java.lang.Double.doubleToLongBits(f))
+      case StringLiteral(s)  => opConst(s)
       case VariableExpr(name) =>
         List(Opcode.OpLoad, Operand.U8(varIdx(name)))
       case UnaryExpr(op, expr) =>
