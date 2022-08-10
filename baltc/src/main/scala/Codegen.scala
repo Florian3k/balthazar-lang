@@ -23,7 +23,7 @@ class Codegen:
     assert(idx >= 0, "Codegen error: variable does not exist")
     idx + 1
 
-  def enterScore() = scopes.push(ScopeContext())
+  def enterScope() = scopes.push(ScopeContext())
 
   def exitScope() = scopes.pop().vars.map(_ => Opcode.OpPop)
 
@@ -78,7 +78,7 @@ class Codegen:
     if retType.isDefined then
       throw Exception("Function with return type is not supported")
 
-    enterScore()
+    enterScope()
     params.foreach(scopes.top.vars.addOne(_))
     body.flatMap(codegenStmt) ++ exitScope()
 
@@ -100,9 +100,9 @@ class Codegen:
     val IfStatement(cond, ifTrue, ifFalse) = is
 
     val codeCond = codegenExpr(cond)
-    enterScore()
+    enterScope()
     val codeIfTrue = ifTrue.flatMap(codegenStmt) ++ exitScope()
-    enterScore()
+    enterScope()
     val codeIfFalse = ifFalse.flatMap(codegenStmt) ++ exitScope()
 
     val firstJump = List[Op](
@@ -128,7 +128,7 @@ class Codegen:
 
     val codeCond = codegenExpr(cond)
     loops.push(LoopContext())
-    enterScore()
+    enterScope()
     val codeBody = body.flatMap(codegenStmt) ++ exitScope()
     val loopCtx = loops.pop()
 
